@@ -6,6 +6,7 @@ import { Plus, Trash2, Save, CheckCircle2, Copy, Loader2, Image as ImageIcon } f
 import toast from 'react-hot-toast';
 import { supabase } from '../lib/supabase';
 import { generateQuizCode } from '../lib/utils';
+import { checkRateLimit } from '../lib/security';
 import Navbar from '../components/Navbar';
 
 interface QuestionInput {
@@ -64,6 +65,12 @@ const CreateQuizPage = () => {
     
     if (!title || questions.some(q => !q.question_text || q.options.slice(0, q.question_type === 'multiple_choice' ? 4 : 2).some(opt => !opt))) {
       setError(t('createQuiz.fill_all_fields'));
+      return;
+    }
+
+    // Security: Prevent spamming quiz creation (30 second cooldown)
+    if (!checkRateLimit('create-quiz', 30000)) {
+      setError('Please wait before creating another quiz.');
       return;
     }
 

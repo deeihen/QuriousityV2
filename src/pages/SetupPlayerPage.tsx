@@ -4,7 +4,9 @@ import { motion } from 'framer-motion';
 import { ArrowRight, User, Shuffle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
+import { checkRateLimit } from '../lib/security';
 import Navbar from '../components/Navbar';
+import toast from 'react-hot-toast';
 
 const SetupPlayerPage = () => {
   const { t } = useTranslation();
@@ -25,7 +27,14 @@ const SetupPlayerPage = () => {
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (name.trim() && !isSubmitting) {
+      // Security: Prevent spamming lobby joins (5 second cooldown)
+      if (!checkRateLimit('setup-player', 5000)) {
+        toast.error('Please wait a moment before trying again.');
+        return;
+      }
+
       setIsSubmitting(true);
       try {
         const { data: quizData } = await supabase

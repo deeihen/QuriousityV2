@@ -3,21 +3,49 @@ import { useTranslation } from 'react-i18next';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Send, MessageSquare, Star, Loader2 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { checkRateLimit } from '../lib/security';
+import toast from 'react-hot-toast';
 
 const FeedbackPage = () => {
   const { t } = useTranslation();
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [rating, setRating] = useState(0);
+  const [message, setMessage] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (rating === 0) {
+      toast.error('Please select a rating');
+      return;
+    }
+
+    // Security: Prevent spamming feedback (1 minute cooldown)
+    if (!checkRateLimit('submit-feedback', 60000)) {
+      toast.error('Please wait before sending more feedback.');
+      return;
+    }
+
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
+    
+    try {
+      const { error } = await supabase
+        .from('feedback')
+        .insert([{ rating, message }]);
+
+      if (error) throw error;
+      
       setSubmitted(true);
-    }, 1000);
+      setMessage('');
+      setRating(0);
+    } catch (err: unknown) {
+      console.error('Error submitting feedback:', err);
+      toast.error('Failed to send feedback. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -70,6 +98,8 @@ const FeedbackPage = () => {
                   <MessageSquare className="absolute left-4 top-4 text-on-surface-variant" size={20} />
                   <textarea 
                     rows={5}
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
                     placeholder={t('feedback.message_placeholder')}
                     className="w-full bg-surface border-2 border-surface-variant rounded-xl pl-12 pr-4 py-4 focus:border-primary focus:outline-none transition-all resize-none"
                     required
