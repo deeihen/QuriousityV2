@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
-import { Play, PlusCircle, QrCode, Timer, BarChart3, CheckCircle2, ChevronRight, Trophy, LayoutGrid } from 'lucide-react';
+import { Play, PlusCircle, QrCode, Timer, BarChart3, CheckCircle2, ChevronRight, Trophy, LayoutGrid, Loader2, ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
@@ -13,11 +13,30 @@ const LandingPage = () => {
   const { t } = useTranslation();
   const [previewStep, setPreviewStep] = useState(0);
   const [user, setUser] = useState<User | null>(null);
+  const [officialQuizzes, setOfficialQuizzes] = useState<any[]>([]);
+  const [loadingQuizzes, setLoadingQuizzes] = useState(true);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
     });
+
+    // Fetch official quizzes for the public Discover section
+    const fetchOfficialQuizzes = async () => {
+      try {
+        const { data } = await supabase
+          .from('quizzes')
+          .select('*')
+          .eq('is_official', true)
+          .limit(3);
+        setOfficialQuizzes(data || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoadingQuizzes(false);
+      }
+    };
+    fetchOfficialQuizzes();
   }, []);
 
   // Mock quiz data for the live preview
@@ -219,6 +238,65 @@ const LandingPage = () => {
             ))}
           </div>
         </motion.section>
+
+        {/* Featured Quizzes (Public Discover) */}
+        <section className="mb-24">
+          <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-12">
+            <div className="max-w-2xl">
+              <h2 className="text-3xl md:text-5xl font-heading font-black text-on-background mb-4">
+                {t('dashboard.featured_quizzes')}
+              </h2>
+              <p className="text-on-surface-variant text-lg">
+                Jump straight into the action with these ready-to-play official quizzes.
+              </p>
+            </div>
+            {loadingQuizzes && <Loader2 className="animate-spin text-primary mb-2" size={24} />}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {officialQuizzes.length === 0 && !loadingQuizzes ? (
+              <div className="col-span-full py-12 text-center bg-surface-container/30 rounded-3xl border-2 border-dashed border-surface-variant text-on-surface-variant">
+                No featured quizzes available right now.
+              </div>
+            ) : (
+              officialQuizzes.map((quiz, idx) => (
+                <motion.div 
+                  key={quiz.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: idx * 0.1 }}
+                  className="bg-surface-container-lowest border border-surface-variant rounded-3xl p-8 shadow-sm hover:shadow-xl transition-all group flex flex-col gap-8 relative overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700"></div>
+                  
+                  <div className="relative z-10 flex flex-col gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-primary uppercase tracking-widest bg-primary/10 px-2.5 py-1 rounded-full">Official</span>
+                    </div>
+                    <h4 className="text-2xl font-black text-on-background leading-tight group-hover:text-primary transition-colors">{quiz.title}</h4>
+                  </div>
+
+                  <div className="relative z-10 mt-auto flex items-center justify-between pt-6 border-t border-surface-variant/50">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">Room Code</span>
+                      <span className="text-lg font-black text-primary tracking-widest">{quiz.access_code}</span>
+                    </div>
+                    <motion.button 
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => navigate(`/quiz/${quiz.access_code}/setup`)}
+                      className="bg-primary text-on-primary px-6 py-3 rounded-2xl font-bold shadow-lg shadow-primary/20 flex items-center gap-2 transition-all"
+                    >
+                      {t('dashboard.play_now')}
+                      <ArrowRight size={18} />
+                    </motion.button>
+                  </div>
+                </motion.div>
+              ))
+            )}
+          </div>
+        </section>
 
         {/* Account Benefits Section */}
         <section className="mb-24 py-12 md:py-20 border-y border-surface-variant/30">

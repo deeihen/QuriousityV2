@@ -88,14 +88,13 @@ const DashboardPage = () => {
   const navigate = useNavigate();
   
   // App State
-  const [activeTab, setActiveTab] = useState<'quizzes' | 'activity' | 'discover'>('quizzes');
+  const [activeTab, setActiveTab] = useState<'quizzes' | 'activity'>('quizzes');
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
 
   // Quizzes State (Professor View)
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
-  const [officialQuizzes, setOfficialQuizzes] = useState<Quiz[]>([]);
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
   const [loadingInsights, setLoadingInsights] = useState(false);
   const [scores, setScores] = useState<ParticipantScore[]>([]);
@@ -118,19 +117,17 @@ const DashboardPage = () => {
         setUser(authUser);
 
         // Parallel fetch for speed
-        const [profileRes, quizzesRes, takenRes, badgesRes, officialRes] = await Promise.all([
+        const [profileRes, quizzesRes, takenRes, badgesRes] = await Promise.all([
           supabase.from('profiles').select('*').eq('user_id', authUser.id).maybeSingle(),
           supabase.from('quizzes').select('*').eq('user_id', authUser.id).order('created_at', { ascending: false }),
           supabase.from('scores').select('id, points, created_at, quizzes(title, access_code)').eq('user_id', authUser.id).order('created_at', { ascending: false }),
-          supabase.from('user_badges').select('awarded_at, badges(*)').eq('user_id', authUser.id),
-          supabase.from('quizzes').select('*').eq('is_official', true)
+          supabase.from('user_badges').select('awarded_at, badges(*)').eq('user_id', authUser.id)
         ]);
 
         setProfile(profileRes.data);
         setQuizzes(quizzesRes.data || []);
         setStudentScores(takenRes.data as any || []);
         setUserBadges(badgesRes.data || []);
-        setOfficialQuizzes(officialRes.data || []);
       } catch (err) {
         console.error('Init Error:', err);
       } finally {
@@ -297,13 +294,6 @@ const DashboardPage = () => {
             >
               {t('studentDashboard.title')}
               {activeTab === 'activity' && <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full" />}
-            </button>
-            <button 
-              onClick={() => setActiveTab('discover')}
-              className={`pb-4 text-sm font-bold transition-all relative whitespace-nowrap ${activeTab === 'discover' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
-            >
-              {t('dashboard.discover')}
-              {activeTab === 'discover' && <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full" />}
             </button>
           </div>
 
