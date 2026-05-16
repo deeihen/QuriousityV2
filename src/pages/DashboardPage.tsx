@@ -503,48 +503,6 @@ const DashboardPage = () => {
                   </div>
                 </div>
               </motion.div>
-            ) : (
-              <motion.div 
-                key="discover" 
-                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                className="flex flex-col gap-8"
-              >
-                <div className="flex flex-col gap-2">
-                  <h3 className="text-2xl font-black text-on-background">{t('dashboard.featured_quizzes')}</h3>
-                  <p className="text-on-surface-variant text-sm">Ready-to-play sample quizzes provided by Quriousity.</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {officialQuizzes.length === 0 ? (
-                    <div className="col-span-full py-20 text-center text-on-surface-variant italic">No featured quizzes available right now.</div>
-                  ) : (
-                    officialQuizzes.map(quiz => (
-                      <div key={quiz.id} className="bg-surface-container-lowest border border-surface-variant rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group flex flex-col gap-6 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform duration-700"></div>
-                        
-                        <div className="relative z-10 flex flex-col gap-2">
-                          <span className="text-[10px] font-bold text-primary uppercase tracking-widest bg-primary/10 px-2 py-0.5 rounded-full self-start">Official</span>
-                          <h4 className="text-lg font-black text-on-background leading-tight">{quiz.title}</h4>
-                        </div>
-
-                        <div className="relative z-10 mt-auto flex items-center justify-between">
-                          <div className="flex flex-col">
-                            <span className="text-[10px] font-bold text-on-surface-variant uppercase">Access Code</span>
-                            <span className="font-black text-primary">{quiz.access_code}</span>
-                          </div>
-                          <button 
-                            onClick={() => navigate(`/quiz/${quiz.access_code}/setup`)}
-                            className="bg-primary text-on-primary px-4 py-2 rounded-xl text-xs font-bold shadow-sm hover:opacity-90 active:scale-95 transition-all flex items-center gap-2"
-                          >
-                            {t('dashboard.play_now')}
-                            <ArrowRight size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </motion.div>
             )}
           </AnimatePresence>
         </div>
