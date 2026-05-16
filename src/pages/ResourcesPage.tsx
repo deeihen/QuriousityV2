@@ -75,7 +75,12 @@ const ResourcesPage = () => {
             <h2 className="text-3xl font-heading font-bold mb-2 break-words">{t('resources.build_with_us')}</h2>
             <p className="opacity-90 max-w-md break-words">{t('resources.build_desc')}</p>
           </div>
-          <a href="#" className="bg-on-primary text-primary px-8 py-4 rounded-xl font-bold flex items-center gap-2 hover:bg-opacity-90 transition-all whitespace-nowrap shadow-md">
+          <a 
+            href="https://github.com/deeihen/QuriousityV2" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="bg-on-primary text-primary px-8 py-4 rounded-xl font-bold flex items-center gap-2 hover:bg-opacity-90 transition-all whitespace-nowrap shadow-md"
+          >
             <Code size={20} />
             {t('resources.view_github')}
           </a>
