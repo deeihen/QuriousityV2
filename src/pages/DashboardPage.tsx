@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence, type Variants } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Trophy, Users, 
-  FileSpreadsheet, BarChart, CheckCircle2, History, ChevronRight, PlusCircle, Timer, Play,
-  RotateCcw, StopCircle
+  BarChart, CheckCircle2, History, PlusCircle, Award, Star, ArrowRight, Loader2
 } from 'lucide-react';
 import { 
-  BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart as RechartsBarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   LineChart, Line
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
@@ -43,119 +42,144 @@ interface Quiz {
   status: 'waiting' | 'live' | 'completed';
 }
 
+interface StudentScore {
+  id: string;
+  points: number;
+  created_at: string;
+  quizzes: {
+    title: string;
+    access_code: string;
+  };
+}
+
 const DashboardPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  
+  // App State
+  const [activeTab, setActiveTab] = useState<'quizzes' | 'activity'>('quizzes');
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
+
+  // Quizzes State (Professor View)
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
-  const [loadingHistory, setLoadingHistory] = useState(true);
   const [loadingInsights, setLoadingInsights] = useState(false);
   const [scores, setScores] = useState<ParticipantScore[]>([]);
   const [questions, setQuestions] = useState<QuestionDetail[]>([]);
   const [responses, setResponses] = useState<ResponseDetail[]>([]);
-  const [error, setError] = useState('');
 
-  const fetchQuizHistory = async () => {
-    setLoadingHistory(true);
-    setError('');
-    try {
+  // Activity State (Student View)
+  const [studentScores, setStudentScores] = useState<StudentScore[]>([]);
+  const [userBadges, setUserBadges] = useState<any[]>([]);
+
+  useEffect(() => {
+    const initDashboard = async () => {
+      setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        navigate('/auth');
+        return;
+      }
+      setUser(user);
 
-      const { data, error: fetchError } = await supabase
+      // 1. Fetch Profile
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      setProfile(profileData);
+
+      // 2. Fetch My Created Quizzes
+      const { data: createdQuizzes } = await supabase
         .from('quizzes')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
+      
+      setQuizzes(createdQuizzes || []);
 
-      if (fetchError) throw fetchError;
-      setQuizzes(data as Quiz[] || []);
-    } catch (err: unknown) {
-      setError('Error fetching history: ' + (err instanceof Error ? err.message : String(err)));
-      console.error('Error fetching history:', err);
-    } finally {
-      setLoadingHistory(false);
-    }
-  };
+      // 3. Fetch My Activity (Quizzes I took)
+      const { data: takenQuizzes } = await supabase
+        .from('scores')
+        .select(`
+          id,
+          points,
+          created_at,
+          quizzes (
+            title,
+            access_code
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
 
-  const handleEndSession = async (quizId: string) => {
-    const { error: updateError } = await supabase
-      .from('quizzes')
-      .update({ status: 'completed' })
-      .eq('id', quizId);
+      setStudentScores(takenQuizzes as any || []);
 
-    if (updateError) {
-      toast.error('Failed to end session');
-    } else {
-      toast.success('Session ended successfully');
-      fetchQuizHistory();
-    }
-  };
+      // 4. Fetch Badges
+      const { data: badgesData } = await supabase
+        .from('user_badges')
+        .select('awarded_at, badges(*)')
+        .eq('user_id', user.id);
+      
+      setUserBadges(badgesData || []);
 
-  const handleRestartSession = async (quiz: Quiz) => {
-    // 1. Reset status
-    const { error: updateError } = await supabase
-      .from('quizzes')
-      .update({ status: 'waiting' })
-      .eq('id', quiz.id);
-
-    if (updateError) {
-      toast.error('Failed to restart session');
-      return;
-    }
-
-    // 2. Clear lobby participants for this quiz
-    await supabase
-      .from('lobby_participants')
-      .delete()
-      .eq('quiz_id', quiz.id);
-
-    toast.success('Session restarted! Redirecting to lobby...');
-    navigate(`/quiz/${quiz.access_code}/lobby`);
-  };
-
-  useEffect(() => {
-    const init = async () => {
-      await fetchQuizHistory();
+      setLoading(false);
     };
-    init();
-  }, []);
+
+    initDashboard();
+  }, [navigate]);
 
   const fetchInsights = async (quiz: Quiz) => {
     setSelectedQuiz(quiz);
     setLoadingInsights(true);
-    setError('');
-    setScores([]);
-    setQuestions([]);
-    setResponses([]);
-
     try {
-      // Fetch scores, questions, and responses in parallel
       const [scoresRes, questionsRes, responsesRes] = await Promise.all([
         supabase.from('scores').select('player_name, points, created_at').eq('quiz_id', quiz.id).order('points', { ascending: false }),
         supabase.from('questions').select('id, question_text, options, correct_index').eq('quiz_id', quiz.id),
         supabase.from('responses').select('question_id, is_correct, time_taken').eq('quiz_id', quiz.id)
       ]);
 
-      if (scoresRes.error) throw scoresRes.error;
-      if (questionsRes.error) throw questionsRes.error;
-      if (responsesRes.error) throw responsesRes.error;
-
       setScores(scoresRes.data || []);
       setQuestions(questionsRes.data || []);
       setResponses(responsesRes.data || []);
-    } catch (err: unknown) {
-      setError('Error fetching data: ' + (err instanceof Error ? err.message : String(err)));
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoadingInsights(false);
     }
   };
 
+  const handleEndSession = async (quizId: string) => {
+    const { error } = await supabase.from('quizzes').update({ status: 'completed' }).eq('id', quizId);
+    if (!error) {
+      toast.success('Session ended');
+      setQuizzes(quizzes.map(q => q.id === quizId ? { ...q, status: 'completed' } : q));
+    }
+  };
+
+  const handleRestartSession = async (quiz: Quiz) => {
+    const { error } = await supabase.from('quizzes').update({ status: 'waiting' }).eq('id', quiz.id);
+    if (!error) {
+      await supabase.from('lobby_participants').delete().eq('quiz_id', quiz.id);
+      toast.success('Session restarted');
+      navigate(`/quiz/${quiz.access_code}/lobby`);
+    }
+  };
+
+  // Helper calculations
+  const calculateLevel = (xp: number) => Math.floor(xp / 1000) + 1;
+  const getXPProgress = (xp: number) => {
+    const progress = ((xp % 1000) / 1000) * 100;
+    return Math.min(Math.max(progress, 0), 100);
+  };
+
   const getScoreDistribution = () => {
     if (scores.length === 0) return [];
-    
-    // Create 5 buckets: 0-20%, 21-40%, etc.
-    const maxScore = questions.length * 120; // Approx max possible
+    const maxScore = (questions.length || 1) * 120;
     const buckets = [
       { name: '0-20%', range: [0, maxScore * 0.2], count: 0 },
       { name: '21-40%', range: [maxScore * 0.2, maxScore * 0.4], count: 0 },
@@ -163,7 +187,6 @@ const DashboardPage = () => {
       { name: '61-80%', range: [maxScore * 0.6, maxScore * 0.8], count: 0 },
       { name: '81-100%', range: [maxScore * 0.8, Infinity], count: 0 },
     ];
-
     scores.forEach(s => {
       for (const bucket of buckets) {
         if (s.points >= bucket.range[0] && s.points < bucket.range[1]) {
@@ -172,586 +195,304 @@ const DashboardPage = () => {
         }
       }
     });
-
     return buckets;
-  };
-
-  const getMissedData = () => {
-    return questions.map((q, idx) => {
-      const qResponses = responses.filter(r => r.question_id === q.id);
-      const incorrectCount = qResponses.filter(r => !r.is_correct).length;
-      return {
-        name: `Q${idx + 1}`,
-        missed: incorrectCount,
-        total: qResponses.length
-      };
-    }).sort((a, b) => b.missed - a.missed).slice(0, 5);
   };
 
   const getTimeData = () => {
     return questions.map((q, idx) => {
       const qResponses = responses.filter(r => r.question_id === q.id);
-      const avgTime = qResponses.length > 0 
-        ? qResponses.reduce((acc, r) => acc + r.time_taken, 0) / qResponses.length 
-        : 0;
-      return {
-        name: `Q${idx + 1}`,
-        time: Math.round(avgTime * 10) / 10
-      };
+      const avgTime = qResponses.length > 0 ? qResponses.reduce((acc, r) => acc + r.time_taken, 0) / qResponses.length : 0;
+      return { name: `Q${idx + 1}`, time: Math.round(avgTime * 10) / 10 };
     });
   };
 
-  const downloadClassReport = () => {
-    if (!selectedQuiz || scores.length === 0) return;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
+        <Loader2 className="text-primary animate-spin" size={48} />
+        <p className="text-primary font-bold">{t('common.loading')}</p>
+      </div>
+    );
+  }
 
-    // Set quiz as completed when generating report (or could be a separate button)
-    supabase.from('quizzes').update({ status: 'completed' }).eq('id', selectedQuiz.id);
-
-    // Create a hidden iframe for printing
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
-    const missedData = getMissedData();
-    const timeData = getTimeData();
-
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Quriousity Report - ${selectedQuiz.title}</title>
-          <style>
-            body { font-family: sans-serif; padding: 40px; color: #1a1c1a; }
-            h1 { color: #4a7c59; border-bottom: 2px solid #4a7c59; padding-bottom: 10px; }
-            .header-info { margin-bottom: 30px; display: flex; justify-between; }
-            .stat-box { background: #f0ece4; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e1e3e0; }
-            th { background: #4a7c59; color: white; }
-            .analytics-section { margin-top: 40px; }
-            .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; background: #4a7c59; color: white; }
-          </style>
-        </head>
-        <body>
-          <h1>Quiz Performance Report</h1>
-          <div className="header-info">
-            <div>
-              <strong>Quiz:</strong> ${selectedQuiz.title}<br>
-              <strong>Session Code:</strong> ${selectedQuiz.access_code}<br>
-              <strong>Date:</strong> ${new Date().toLocaleDateString()}
-            </div>
-          </div>
-
-          <div class="stat-box">
-            <strong>Overview:</strong> ${scores.length} Participants | Avg. Score: ${Math.round(scores.reduce((acc, s) => acc + s.points, 0) / scores.length)} pts
-          </div>
-
-          <h2>Student Results</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Rank</th>
-                <th>Player Name</th>
-                <th>Score</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${scores.map((s, idx) => `
-                <tr>
-                  <td>#${idx + 1}</td>
-                  <td>${s.player_name}</td>
-                  <td>${s.points}</td>
-                  <td><span class="badge">Completed</span></td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-
-          <div class="analytics-section">
-            <h2>Critical Insights</h2>
-            <p><strong>Most Challenging Question:</strong> ${missedData[0]?.name || 'N/A'} (${missedData[0]?.missed || 0} misses)</p>
-            <p><strong>Average Time Spent:</strong> ${Math.round(timeData.reduce((acc, t) => acc + t.time, 0) / timeData.length)} seconds per question</p>
-          </div>
-
-          <footer style="margin-top: 50px; font-size: 12px; color: #747972; text-align: center; border-top: 1px solid #e1e3e0; padding-top: 20px;">
-            Generated by Quriousity - Real-Time Learning Platform
-          </footer>
-        </body>
-      </html>
-    `);
-
-    printWindow.document.close();
-    printWindow.print();
-  };
-
-  const downloadCSV = () => {
-    if (!scores.length || !selectedQuiz) return;
-    const headers = ['Player Name', 'Score', 'Date Joined'];
-    const csvContent = [
-      headers.join(','),
-      ...scores.map(s => `"${s.player_name}",${s.points},"${new Date(s.created_at).toLocaleString()}"`)
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${selectedQuiz.title}_Results.csv`;
-    link.click();
-  };
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, x: -20 },
-    visible: { opacity: 1, x: 0, transition: { duration: 0.4 } }
-  };
-
-  const cardVariants: Variants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
-  };
+  const currentLevel = calculateLevel(profile?.xp || 0);
+  const xpProgress = getXPProgress(profile?.xp || 0);
 
   return (
     <div className="min-h-screen flex flex-col bg-background font-body">
       <Navbar showBackButton backUrl="/" title={t('dashboard.title')} />
 
-      <main className="flex-grow pt-20 md:pt-24 pb-32 px-margin-mobile md:px-margin-desktop max-w-[1200px] mx-auto w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <main className="flex-grow pt-24 pb-32 px-margin-mobile md:px-margin-desktop max-w-[1200px] mx-auto w-full">
+        <div className="flex flex-col gap-10">
           
-          {/* Left Column: Quiz History */}
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="lg:col-span-4 flex flex-col gap-6"
-          >
-            <section className="bg-surface-container-lowest rounded-xl border border-surface-variant shadow-sm overflow-hidden flex flex-col h-auto md:h-[calc(100vh-250px)]">
-              <div className="p-6 border-b border-surface-variant bg-surface-container/30 flex justify-between items-center">
-                <h3 className="font-bold text-on-background flex items-center gap-2 truncate">
-                  <History size={20} className="text-primary shrink-0" />
-                  <span className="truncate">{t('dashboard.quiz_history')}</span>
-                </h3>
-                <motion.button 
-                  whileHover={{ rotate: 90 }}
-                  onClick={() => navigate('/create')}
-                  className="p-2 text-primary hover:bg-primary/10 rounded-full transition-colors shrink-0"
-                  title={t('dashboard.create_new')}
-                >
-                  <PlusCircle size={20} />
-                </motion.button>
+          {/* Header Stats (Common for all users) */}
+          <section className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 bg-surface-container-lowest p-6 md:p-8 rounded-3xl border border-surface-variant shadow-sm overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl"></div>
+            
+            <div className="relative z-10 flex flex-col gap-1 overflow-hidden w-full md:w-auto">
+              <span className="text-xs font-bold text-primary uppercase tracking-widest">{t('common.welcome')}</span>
+              <h1 className="text-3xl md:text-4xl font-black text-on-background truncate">
+                {user?.email?.split('@')[0]}
+              </h1>
+              <div className="flex items-center gap-4 mt-2">
+                <div className="flex items-center gap-1.5 text-tertiary font-black">
+                  <span>🔥 {profile?.streak_count || 0} Day Streak</span>
+                </div>
+                <div className="h-4 w-px bg-surface-variant"></div>
+                <div className="text-on-surface-variant text-sm font-bold">
+                  Lv. {currentLevel} • {(profile?.xp || 0).toLocaleString()} XP
+                </div>
               </div>
-              
-              <div className="flex-grow overflow-y-auto max-h-[400px] md:max-h-full">
-                {loadingHistory ? (
-                  <div className="flex flex-col">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className="p-6 border-b border-surface-variant flex flex-col gap-2 animate-pulse">
-                        <div className="h-6 w-3/4 bg-surface-container rounded"></div>
-                        <div className="h-4 w-1/2 bg-surface-container rounded"></div>
+            </div>
+
+            <div className="relative z-10 w-full md:w-64 flex flex-col gap-2">
+              <div className="flex justify-between text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">
+                <span>Level {currentLevel} Progress</span>
+                <span>{Math.round(xpProgress)}%</span>
+              </div>
+              <div className="h-2.5 w-full bg-surface-container rounded-full overflow-hidden border border-surface-variant/50 p-0.5">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${xpProgress}%` }}
+                  className="h-full bg-primary rounded-full shadow-sm"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Navigation Tabs */}
+          <div className="flex border-b border-surface-variant gap-8 overflow-x-auto no-scrollbar scroll-smooth">
+            <button 
+              onClick={() => setActiveTab('quizzes')}
+              className={`pb-4 text-sm font-bold transition-all relative whitespace-nowrap ${activeTab === 'quizzes' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+            >
+              {t('dashboard.quiz_history')}
+              {activeTab === 'quizzes' && <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full" />}
+            </button>
+            <button 
+              onClick={() => setActiveTab('activity')}
+              className={`pb-4 text-sm font-bold transition-all relative whitespace-nowrap ${activeTab === 'activity' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+            >
+              {t('studentDashboard.title')}
+              {activeTab === 'activity' && <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full" />}
+            </button>
+          </div>
+
+          {/* Tab Content */}
+          <AnimatePresence mode="wait">
+            {activeTab === 'quizzes' ? (
+              <motion.div 
+                key="quizzes" 
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                className="grid grid-cols-1 lg:grid-cols-12 gap-8"
+              >
+                {/* Created Quizzes List */}
+                <div className="lg:col-span-4 flex flex-col gap-6">
+                  <div className="bg-surface-container-lowest rounded-2xl border border-surface-variant shadow-sm overflow-hidden flex flex-col h-auto md:max-h-[600px]">
+                    <div className="p-5 border-b border-surface-variant bg-surface-container/30 flex justify-between items-center">
+                      <h3 className="font-bold text-on-background flex items-center gap-2">
+                        <History size={18} className="text-primary" />
+                        Created Quizzes
+                      </h3>
+                      <button onClick={() => navigate('/create')} className="p-2 bg-primary text-on-primary rounded-full hover:scale-110 transition-transform">
+                        <PlusCircle size={18} />
+                      </button>
+                    </div>
+                    <div className="overflow-y-auto">
+                      {quizzes.length === 0 ? (
+                        <div className="p-10 text-center text-on-surface-variant italic">No quizzes created yet.</div>
+                      ) : (
+                        quizzes.map(quiz => (
+                          <div 
+                            key={quiz.id} 
+                            onClick={() => fetchInsights(quiz)}
+                            className={`p-5 border-b border-surface-variant last:border-0 hover:bg-primary/5 cursor-pointer transition-all ${selectedQuiz?.id === quiz.id ? 'bg-primary/5 border-l-4 border-l-primary pl-4' : ''}`}
+                          >
+                            <h4 className="font-bold text-on-background mb-1 truncate">{quiz.title}</h4>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-bold px-2 py-0.5 bg-surface-container text-on-surface-variant rounded uppercase">{quiz.access_code}</span>
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${quiz.status === 'live' ? 'bg-error text-on-error animate-pulse' : 'bg-surface-variant text-on-surface-variant'}`}>{quiz.status}</span>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quiz Insights Area */}
+                <div className="lg:col-span-8">
+                  {!selectedQuiz ? (
+                    <div className="h-full min-h-[400px] flex flex-col items-center justify-center bg-surface-container-lowest rounded-2xl border-2 border-dashed border-surface-variant text-on-surface-variant gap-4 p-10 text-center">
+                      <BarChart size={48} className="opacity-20" />
+                      <p className="font-medium">Select a quiz to view detailed performance insights.</p>
+                    </div>
+                  ) : loadingInsights ? (
+                    <div className="h-full min-h-[400px] flex flex-col gap-6">
+                      <div className="h-20 bg-surface-container rounded-2xl animate-pulse" />
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="h-24 bg-surface-container rounded-2xl animate-pulse" />
+                        <div className="h-24 bg-surface-container rounded-2xl animate-pulse" />
+                        <div className="h-24 bg-surface-container rounded-2xl animate-pulse" />
                       </div>
-                    ))}
-                  </div>
-                ) : quizzes.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full p-8 text-center gap-4">
-                    <motion.div 
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      className="w-16 h-16 md:w-20 md:h-20 bg-primary/5 rounded-full flex items-center justify-center text-primary/30"
-                    >
-                      <History size={32} className="md:w-10 md:h-10" />
-                    </motion.div>
-                    <div>
-                      <h4 className="font-bold text-on-background break-words">{t('dashboard.no_quizzes')}</h4>
-                      <p className="text-on-surface-variant text-sm mt-1 break-words">{t('dashboard.no_quizzes_desc')}</p>
+                      <div className="h-64 bg-surface-container rounded-2xl animate-pulse" />
                     </div>
-                    <motion.button 
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => navigate('/create')}
-                      className="mt-2 bg-primary text-on-primary px-6 py-2 rounded-full font-bold text-sm shadow-sm whitespace-nowrap"
-                    >
-                      {t('dashboard.create_first')}
-                    </motion.button>
-                  </div>
-                ) : (
-                  <motion.div 
-                    variants={containerVariants}
-                    initial="hidden"
-                    animate="visible"
-                    className="flex flex-col"
-                  >
-                    {quizzes.map((quiz) => (
-                      <motion.div
-                        variants={itemVariants}
-                        key={quiz.id}
-                        onClick={() => fetchInsights(quiz)}
-                        className={`w-full text-left p-6 border-b border-surface-variant last:border-0 hover:bg-surface-container/20 transition-all flex items-center justify-between group cursor-pointer ${
-                          selectedQuiz?.id === quiz.id ? 'bg-primary/5 border-l-4 border-l-primary pl-5' : ''
-                        }`}
-                      >
-                        <div className="overflow-hidden mr-2">
-                          <div className={`font-bold text-lg mb-1 transition-colors truncate flex items-center gap-2 ${selectedQuiz?.id === quiz.id ? 'text-primary' : 'text-on-background'}`}>
-                            {quiz.title}
-                            {quiz.status === 'live' && (
-                              <span className="flex h-2 w-2 rounded-full bg-error animate-pulse shrink-0" title="Live Now"></span>
-                            )}
-                          </div>
-                          <div className="flex flex-wrap items-center gap-2 overflow-hidden mb-2">
-                            <span className="text-[10px] font-bold bg-surface-container text-on-surface-variant px-2 py-0.5 rounded uppercase tracking-wider whitespace-nowrap">
-                              {t('createQuiz.access_code')}: {quiz.access_code}
-                            </span>
-                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-tight whitespace-nowrap ${
-                              quiz.status === 'live' ? 'bg-error/10 text-error' :
-                              quiz.status === 'completed' ? 'bg-on-surface-variant/10 text-on-surface-variant' :
-                              'bg-primary/10 text-primary'
-                            }`}>
-                              {quiz.status}
-                            </span>
-                          </div>
-
-                          <div className="flex flex-wrap gap-3 mt-1">
-                            {/* Actions based on status */}
-                            {quiz.status === 'live' ? (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEndSession(quiz.id);
-                                }}
-                                className="text-[10px] font-bold text-error flex items-center gap-1 hover:underline whitespace-nowrap"
-                              >
-                                <StopCircle size={12} />
-                                End Session
-                              </button>
-                            ) : quiz.status === 'completed' ? (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleRestartSession(quiz);
-                                }}
-                                className="text-[10px] font-bold text-primary flex items-center gap-1 hover:underline whitespace-nowrap"
-                              >
-                                <RotateCcw size={12} />
-                                Restart Session
-                              </button>
-                            ) : (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate(`/quiz/${quiz.access_code}/lobby`);
-                                }}
-                                className="text-[10px] font-bold text-primary flex items-center gap-1 hover:underline whitespace-nowrap"
-                              >
-                                <Play size={12} fill="currentColor" />
-                                Enter Lobby
-                              </button>
-                            )}
-
-                            {quiz.status === 'live' && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate(`/quiz/${quiz.access_code}/lobby`);
-                                }}
-                                className="text-[10px] font-bold text-primary flex items-center gap-1 hover:underline whitespace-nowrap"
-                              >
-                                <Users size={12} />
-                                View Lobby
-                              </button>
-                            )}
-                          </div>
+                  ) : (
+                    <div className="flex flex-col gap-8">
+                      {/* Insights Header */}
+                      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div className="overflow-hidden">
+                          <h2 className="text-2xl font-black text-on-background break-words">{selectedQuiz.title}</h2>
+                          <p className="text-on-surface-variant text-sm font-bold">Session Code: <span className="text-primary">{selectedQuiz.access_code}</span></p>
                         </div>
-                        <ChevronRight size={20} className={`shrink-0 transition-all ${selectedQuiz?.id === quiz.id ? 'text-primary translate-x-1' : 'text-on-surface-variant opacity-0 group-hover:opacity-100'}`} />
-                      </motion.div>
-                    ))}
-                  </motion.div>
-                )}
-              </div>
-            </section>
-          </motion.div>
+                        <div className="flex gap-2">
+                           {selectedQuiz.status === 'live' ? (
+                             <button onClick={() => handleEndSession(selectedQuiz.id)} className="px-4 py-2 bg-error text-on-error rounded-xl text-xs font-bold shadow-sm">End Session</button>
+                           ) : (
+                             <button onClick={() => handleRestartSession(selectedQuiz)} className="px-4 py-2 bg-primary text-on-primary rounded-xl text-xs font-bold shadow-sm">Restart</button>
+                           )}
+                        </div>
+                      </div>
 
-          {/* Right Column: Insights */}
-          <div className="lg:col-span-8">
-            <AnimatePresence mode="wait">
-              {!selectedQuiz ? (
-                <motion.div 
-                  key="empty"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="bg-surface-container-lowest rounded-xl border-2 border-dashed border-surface-variant h-auto md:h-[calc(100vh-250px)] flex flex-col items-center justify-center p-8 md:p-12 text-center text-on-surface-variant gap-4 min-h-[300px]"
-                >
-                  <BarChart size={64} className="opacity-20 shrink-0" />
-                  <div>
-                    <h3 className="text-xl font-heading font-bold text-on-background mb-2 break-words">{t('dashboard.select_quiz')}</h3>
-                    <p className="max-w-xs mx-auto break-words">{t('dashboard.select_quiz_desc')}</p>
-                  </div>
-                </motion.div>
-              ) : loadingInsights ? (
-                <motion.div 
-                  key="loading"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex flex-col gap-8 h-auto md:h-[calc(100vh-250px)]"
-                >
-                  <div className="flex justify-between items-center gap-4">
-                    <div className="flex flex-col gap-2 w-1/3">
-                      <div className="h-8 bg-surface-container rounded animate-pulse w-full"></div>
-                      <div className="h-4 bg-surface-container rounded animate-pulse w-2/3"></div>
-                    </div>
-                    <div className="h-10 bg-surface-container rounded animate-pulse w-32"></div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {[1, 2, 3].map(i => (
-                      <div key={i} className="h-24 bg-surface-container rounded-xl animate-pulse"></div>
-                    ))}
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.div 
-                  key="insights"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex flex-col gap-8"
-                >
-                  {error && (
-                    <div className="bg-error/10 border border-error/20 p-4 rounded-xl text-error text-sm font-bold break-words">
-                      {error}
+                      {/* Charts Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <AnalyticsCard title="Participants" value={scores.length} icon={<Users size={18} />} color="text-primary" />
+                        <AnalyticsCard title="Avg Score" value={scores.length > 0 ? Math.round(scores.reduce((a,b)=>a+b.points,0)/scores.length) : 0} icon={<Trophy size={18} />} color="text-tertiary" />
+                        <AnalyticsCard title="Questions" value={questions.length} icon={<BarChart size={18} />} color="text-secondary" />
+                      </div>
+
+                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                        <ChartCard title="Score Distribution">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <RechartsBarChart data={getScoreDistribution()}>
+                              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10}} />
+                              <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10}} />
+                              <Tooltip contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}} />
+                              <Bar dataKey="count" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+                            </RechartsBarChart>
+                          </ResponsiveContainer>
+                        </ChartCard>
+                        <ChartCard title="Time Spent (sec)">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={getTimeData()}>
+                              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10}} />
+                              <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10}} />
+                              <Tooltip contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}} />
+                              <Line type="monotone" dataKey="time" stroke="var(--secondary)" strokeWidth={3} dot={{r: 4, fill: 'var(--secondary)'}} />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </ChartCard>
+                      </div>
                     </div>
                   )}
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div className="overflow-hidden w-full">
-                      <h2 className="text-2xl md:text-3xl font-heading font-bold text-on-background break-words">{selectedQuiz.title}</h2>
-                      <p className="text-on-surface-variant text-sm md:text-base break-words">
-                        {t('dashboard.session_code')} <span className="font-bold text-primary">{selectedQuiz.access_code}</span>
-                      </p>
-                    </div>
-                    <div className="flex gap-2 shrink-0">
-                      <motion.button 
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={downloadClassReport} 
-                        className="flex items-center gap-2 bg-primary/10 border border-primary/20 px-4 py-2 rounded-lg text-sm font-bold text-primary hover:bg-primary/20 transition-all shadow-sm whitespace-nowrap"
-                      >
-                        <FileSpreadsheet size={18} className="shrink-0" />
-                        Class Report (PDF)
-                      </motion.button>
-                      <motion.button 
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={downloadCSV} 
-                        className="flex items-center gap-2 bg-surface-container-lowest border border-surface-variant px-4 py-2 rounded-lg text-sm font-bold text-on-surface-variant hover:text-primary hover:border-primary transition-all shadow-sm whitespace-nowrap"
-                      >
-                        <FileSpreadsheet size={18} className="shrink-0" />
-                        {t('dashboard.export_csv')}
-                      </motion.button>
-                    </div>
-                  </div>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="activity" 
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                className="flex flex-col gap-10"
+              >
+                {/* Stats Summary */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                  <StatItem label="Total XP Earned" value={(profile?.xp || 0).toLocaleString()} icon={<Star />} color="bg-primary/10 text-primary" />
+                  <StatItem label="Quizzes Completed" value={studentScores.length} icon={<CheckCircle2 />} color="bg-tertiary/10 text-tertiary" />
+                  <StatItem label="Active Badges" value={userBadges.length} icon={<Award />} color="bg-secondary/10 text-secondary" />
+                </div>
 
-                  {/* Summary Cards */}
-                  <motion.div 
-                    variants={containerVariants}
-                    initial="hidden"
-                    animate="visible"
-                    className="grid grid-cols-1 md:grid-cols-3 gap-4"
-                  >
-                    {[
-                      { icon: <Users size={24} />, label: t('dashboard.students_stat'), value: scores.length, color: "bg-primary/10 text-primary" },
-                      { icon: <Trophy size={24} />, label: t('dashboard.avg_score_stat'), value: scores.length > 0 ? Math.round(scores.reduce((acc, s) => acc + s.points, 0) / scores.length) : 0, color: "bg-tertiary/10 text-tertiary" },
-                      { icon: <BarChart size={24} />, label: t('dashboard.questions_stat'), value: questions.length, color: "bg-secondary/10 text-secondary" }
-                    ].map((stat, idx) => (
-                      <motion.div 
-                        key={idx}
-                        variants={cardVariants}
-                        className="bg-surface-container-lowest p-6 rounded-xl border border-surface-variant shadow-sm flex items-center gap-4"
-                      >
-                        <div className={`w-12 h-12 ${stat.color} rounded-lg flex items-center justify-center shrink-0`}>
-                          {stat.icon}
-                        </div>
-                        <div className="overflow-hidden">
-                          <div className="text-[10px] md:text-xs font-bold text-on-surface-variant uppercase tracking-wider truncate">{stat.label}</div>
-                          <div className="text-xl md:text-2xl font-bold text-on-background">{stat.value}</div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </motion.div>
-
-                  {/* Analytics Charts */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <motion.section 
-                      variants={cardVariants}
-                      className="bg-surface-container-lowest p-4 md:p-6 rounded-xl border border-surface-variant shadow-sm flex flex-col"
-                    >
-                      <h3 className="font-bold text-on-background mb-6 flex items-center gap-2 break-words shrink-0">
-                        <BarChart size={18} className="text-error shrink-0" />
-                        {t('dashboard.most_missed')}
-                      </h3>
-                      <div className="w-full h-[200px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <RechartsBarChart data={getMissedData()}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--surface-variant)" />
-                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: 'var(--on-surface-variant)', fontSize: 10}} />
-                            <YAxis axisLine={false} tickLine={false} tick={{fill: 'var(--on-surface-variant)', fontSize: 10}} />
-                            <Tooltip 
-                              cursor={{fill: 'var(--surface-container)'}}
-                              contentStyle={{backgroundColor: 'var(--surface-container-lowest)', borderColor: 'var(--surface-variant)', borderRadius: '8px', fontSize: '12px'}}
-                            />
-                            <Bar dataKey="missed" fill="var(--error)" radius={[4, 4, 0, 0]} />
-                          </RechartsBarChart>
-                        </ResponsiveContainer>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                  {/* Recent History */}
+                  <div className="lg:col-span-8 flex flex-col gap-6">
+                    <h3 className="text-xl font-black text-on-background flex items-center gap-2">
+                      <History size={22} className="text-primary" />
+                      Recent Activity
+                    </h3>
+                    {studentScores.length === 0 ? (
+                      <div className="bg-surface-container-lowest border-2 border-dashed border-surface-variant rounded-3xl p-12 text-center text-on-surface-variant italic">
+                        You haven't participated in any quizzes yet.
                       </div>
-                    </motion.section>
-
-                    <motion.section 
-                      variants={cardVariants}
-                      className="bg-surface-container-lowest p-4 md:p-6 rounded-xl border border-surface-variant shadow-sm flex flex-col"
-                    >
-                      <h3 className="font-bold text-on-background mb-6 flex items-center gap-2 break-words shrink-0">
-                        <Trophy size={18} className="text-tertiary shrink-0" />
-                        Score Range
-                      </h3>
-                      <div className="w-full h-[200px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <RechartsBarChart data={getScoreDistribution()}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--surface-variant)" />
-                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: 'var(--on-surface-variant)', fontSize: 9}} />
-                            <YAxis axisLine={false} tickLine={false} tick={{fill: 'var(--on-surface-variant)', fontSize: 10}} />
-                            <Tooltip 
-                              cursor={{fill: 'var(--surface-container)'}}
-                              contentStyle={{backgroundColor: 'var(--surface-container-lowest)', borderColor: 'var(--surface-variant)', borderRadius: '8px', fontSize: '12px'}}
-                            />
-                            <Bar dataKey="count" fill="var(--tertiary)" radius={[4, 4, 0, 0]} />
-                          </RechartsBarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </motion.section>
-
-                    <motion.section 
-                      variants={cardVariants}
-                      className="bg-surface-container-lowest p-4 md:p-6 rounded-xl border border-surface-variant shadow-sm flex flex-col"
-                    >
-                      <h3 className="font-bold text-on-background mb-6 flex items-center gap-2 break-words shrink-0">
-                        <Timer size={18} className="text-secondary shrink-0" />
-                        {t('dashboard.avg_time')}
-                      </h3>
-                      <div className="w-full h-[200px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={getTimeData()}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--surface-variant)" />
-                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: 'var(--on-surface-variant)', fontSize: 10}} />
-                            <YAxis axisLine={false} tickLine={false} tick={{fill: 'var(--on-surface-variant)', fontSize: 10}} />
-                            <Tooltip 
-                              contentStyle={{backgroundColor: 'var(--surface-container-lowest)', borderColor: 'var(--surface-variant)', borderRadius: '8px', fontSize: '12px'}}
-                            />
-                            <Line type="monotone" dataKey="time" stroke="var(--primary)" strokeWidth={3} dot={{r: 4, fill: 'var(--primary)'}} />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </motion.section>
-                  </div>
-
-                  {/* Main Content Tabs (Two Columns) */}
-                  <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                    {/* Left Column: Student Leaderboard */}
-                    <motion.div 
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.3 }}
-                      className="xl:col-span-1 flex flex-col gap-6"
-                    >
-                      <section className="bg-surface-container-lowest rounded-xl border border-surface-variant shadow-sm overflow-hidden">
-                        <div className="p-4 border-b border-surface-variant bg-surface-container/30">
-                          <h3 className="font-bold text-on-background flex items-center gap-2 truncate">
-                            <Trophy size={18} className="text-primary shrink-0" />
-                            {t('dashboard.leaderboard')}
-                          </h3>
-                        </div>
-                        <div className="max-h-[400px] md:max-h-[500px] overflow-y-auto">
-                          {scores.length === 0 ? (
-                            <p className="p-8 text-center text-sm text-on-surface-variant italic break-words">{t('dashboard.no_participants')}</p>
-                          ) : (
-                            <motion.div variants={containerVariants} initial="hidden" animate="visible">
-                              {scores.map((s, idx) => (
-                                <motion.div 
-                                  key={idx} 
-                                  variants={itemVariants}
-                                  className="p-4 border-b border-surface-variant last:border-0 flex items-center justify-between hover:bg-surface-container/20 transition-colors"
-                                >
-                                  <div className="flex items-center gap-3 overflow-hidden mr-2">
-                                    <span className="text-[10px] md:text-xs font-bold text-on-surface-variant w-4 shrink-0">#{idx+1}</span>
-                                    <span className="font-bold text-xs md:text-sm text-on-background truncate">{s.player_name}</span>
-                                  </div>
-                                  <span className="text-[10px] md:text-xs font-bold bg-primary/10 text-primary px-2 py-1 rounded-full whitespace-nowrap">{s.points} pts</span>
-                                </motion.div>
-                              ))}
-                            </motion.div>
-                          )}
-                        </div>
-                      </section>
-                    </motion.div>
-
-                    {/* Right Column: Question Analysis */}
-                    <motion.div 
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.4 }}
-                      className="xl:col-span-2 flex flex-col gap-6"
-                    >
-                      <section className="bg-surface-container-lowest rounded-xl border border-surface-variant shadow-sm overflow-hidden">
-                        <div className="p-4 border-b border-surface-variant bg-surface-container/30">
-                          <h3 className="font-bold text-on-background flex items-center gap-2 truncate">
-                            <BarChart size={18} className="text-secondary shrink-0" />
-                            {t('dashboard.question_breakdown')}
-                          </h3>
-                        </div>
-                        <div className="p-4 md:p-6 flex flex-col gap-8">
-                          {questions.map((q, idx) => (
-                            <motion.div 
-                              key={idx} 
-                              initial={{ opacity: 0, y: 10 }}
-                              whileInView={{ opacity: 1, y: 0 }}
-                              viewport={{ once: true }}
-                              className="flex flex-col gap-4"
-                            >
-                              <div className="flex items-start gap-3">
-                                <span className="bg-surface-container text-on-surface-variant w-6 h-6 rounded flex items-center justify-center text-[10px] md:text-xs font-bold flex-shrink-0 mt-1">
-                                  {idx + 1}
-                                </span>
-                                <h4 className="font-heading font-bold text-on-background text-base md:text-lg leading-tight break-words">{q.question_text}</h4>
+                    ) : (
+                      <div className="flex flex-col gap-4">
+                        {studentScores.map(score => (
+                          <div key={score.id} className="bg-surface-container-lowest p-6 rounded-2xl border border-surface-variant shadow-sm flex flex-col md:flex-row justify-between items-center gap-4 hover:border-primary/50 transition-colors">
+                            <div className="overflow-hidden text-center md:text-left">
+                              <h4 className="font-bold text-lg text-on-background mb-1">{score.quizzes.title}</h4>
+                              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{new Date(score.created_at).toLocaleDateString()}</span>
+                            </div>
+                            <div className="flex items-center gap-6">
+                              <div className="text-right">
+                                <div className="text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">Score</div>
+                                <div className="text-2xl font-black text-primary">{score.points} pts</div>
                               </div>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-9">
-                                {q.options.map((opt, optIdx) => (
-                                  <div key={optIdx} className={`p-3 rounded-lg border flex items-center justify-between gap-2 ${
-                                    optIdx === q.correct_index 
-                                      ? 'bg-primary/5 border-primary/30 text-primary' 
-                                      : 'bg-surface border-surface-variant text-on-surface-variant'
-                                  }`}>
-                                    <span className="text-xs md:text-sm font-medium break-words">{opt}</span>
-                                    {optIdx === q.correct_index && <CheckCircle2 size={16} className="shrink-0" />}
-                                  </div>
-                                ))}
-                              </div>
-                            </motion.div>
-                          ))}
-                        </div>
-                      </section>
-                    </motion.div>
+                              <button onClick={() => navigate(`/results/${score.quizzes.access_code}`)} className="p-3 bg-primary/5 text-primary rounded-full hover:bg-primary/10 transition-colors">
+                                <ArrowRight size={20} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+
+                  {/* Badges Column */}
+                  <div className="lg:col-span-4 flex flex-col gap-6">
+                    <h3 className="text-xl font-black text-on-background flex items-center gap-2">
+                      <Award size={22} className="text-tertiary" />
+                      Badges
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {userBadges.length === 0 ? (
+                        <div className="col-span-full p-6 bg-surface-container/20 border-2 border-dashed border-surface-variant rounded-2xl text-center text-xs text-on-surface-variant italic">
+                          Keep playing to earn badges!
+                        </div>
+                      ) : (
+                        userBadges.map((ub, i) => (
+                          <div key={i} className="bg-surface-container-lowest p-4 rounded-2xl border border-surface-variant shadow-sm flex flex-col items-center text-center gap-2 group">
+                            <div className="w-12 h-12 bg-tertiary/10 text-tertiary rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner">
+                              <Award size={24} />
+                            </div>
+                            <span className="font-bold text-[10px] text-on-background leading-tight">{ub.badges.name}</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </main>
       <Footer />
     </div>
   );
 };
+
+const AnalyticsCard = ({ title, value, icon, color }: any) => (
+  <div className="bg-surface-container-lowest p-5 rounded-2xl border border-surface-variant shadow-sm flex items-center gap-4">
+    <div className={`w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center ${color}`}>{icon}</div>
+    <div>
+      <div className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{title}</div>
+      <div className="text-xl font-black text-on-background">{value}</div>
+    </div>
+  </div>
+);
+
+const ChartCard = ({ title, children }: any) => (
+  <div className="bg-surface-container-lowest p-6 rounded-2xl border border-surface-variant shadow-sm flex flex-col gap-6">
+    <h3 className="font-bold text-on-surface text-sm uppercase tracking-widest">{title}</h3>
+    <div className="h-[200px] w-full">{children}</div>
+  </div>
+);
+
+const StatItem = ({ label, value, icon, color }: any) => (
+  <div className="bg-surface-container-lowest p-6 rounded-2xl border border-surface-variant shadow-sm flex items-center gap-4">
+    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${color}`}>{icon}</div>
+    <div>
+      <div className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{label}</div>
+      <div className="text-2xl font-black text-on-background">{value}</div>
+    </div>
+  </div>
+);
 
 export default DashboardPage;

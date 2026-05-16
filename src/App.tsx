@@ -11,7 +11,6 @@ import ResultsPage from './pages/ResultsPage';
 import CreateQuizPage from './pages/CreateQuizPage';
 import SetupPlayerPage from './pages/SetupPlayerPage';
 import DashboardPage from './pages/DashboardPage';
-import StudentDashboardPage from './pages/StudentDashboardPage';
 import ResourcesPage from './pages/ResourcesPage';
 import AuthPage from './pages/AuthPage';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -68,14 +67,6 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <AnimatedPage><DashboardPage /></AnimatedPage>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/student-dashboard" 
-          element={
-            <ProtectedRoute>
-              <AnimatedPage><StudentDashboardPage /></AnimatedPage>
             </ProtectedRoute>
           } 
         />

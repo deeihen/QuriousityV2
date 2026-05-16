@@ -67,9 +67,9 @@ const LandingPage = () => {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="md:col-span-7 bg-surface-container-lowest p-6 md:p-12 rounded-xl border border-surface-variant flex flex-col justify-center shadow-sm"
+            className="md:col-span-7 bg-surface p-6 md:p-12 rounded-3xl border border-surface-variant flex flex-col justify-center shadow-sm"
           >
-            <motion.h1 variants={itemVariants} className="text-3xl sm:text-4xl md:text-6xl text-on-background mb-6 leading-tight break-words">
+            <motion.h1 variants={itemVariants} className="text-3xl sm:text-4xl md:text-6xl text-on-background mb-6 leading-tight break-words font-black">
               {t('landing.hero_title')}
             </motion.h1>
             <motion.p variants={itemVariants} className="text-base md:text-lg text-on-surface-variant mb-10 max-w-2xl leading-relaxed">
@@ -211,6 +211,48 @@ const LandingPage = () => {
           </div>
         </motion.section>
 
+        {/* Account Benefits Section */}
+        <section className="mb-24 py-12 md:py-20 border-y border-surface-variant/30">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-heading font-black text-on-background mb-4">
+              {t('landing.benefits_title')}
+            </h2>
+            <p className="text-on-surface-variant text-lg max-w-2xl mx-auto">
+              {t('landing.benefits_desc')}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            <BenefitCard 
+              icon={<BarChart3 size={32} className="text-primary" />}
+              title={t('landing.benefit_track_title')}
+              desc={t('landing.benefit_track_desc')}
+            />
+            <BenefitCard 
+              icon={<PlusCircle size={32} className="text-secondary" />}
+              title={t('landing.benefit_create_title')}
+              desc={t('landing.benefit_create_desc')}
+            />
+            <BenefitCard 
+              icon={<Trophy size={32} className="text-tertiary" />}
+              title={t('landing.benefit_rewards_title')}
+              desc={t('landing.benefit_rewards_desc')}
+            />
+          </div>
+
+          <div className="flex justify-center mt-16">
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/auth')}
+              className="bg-primary text-on-primary px-10 py-4 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 flex items-center gap-3 transition-all"
+            >
+              Get Started for Free
+              <ChevronRight size={24} />
+            </motion.button>
+          </div>
+        </section>
+
         {/* Features Section */}
         <section className="mb-24">
           <motion.h2 
@@ -253,5 +295,18 @@ const LandingPage = () => {
     </div>
   );
 };
+
+const BenefitCard = ({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) => (
+  <motion.div 
+    whileHover={{ y: -5 }}
+    className="bg-surface-container-lowest p-8 rounded-2xl border border-surface-variant shadow-sm flex flex-col items-center text-center gap-4"
+  >
+    <div className="w-16 h-16 bg-surface-container rounded-2xl flex items-center justify-center mb-2">
+      {icon}
+    </div>
+    <h3 className="text-xl font-bold text-on-background">{title}</h3>
+    <p className="text-on-surface-variant text-sm leading-relaxed">{desc}</p>
+  </motion.div>
+);
 
 export default LandingPage;

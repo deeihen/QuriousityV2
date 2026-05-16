@@ -12,7 +12,7 @@ const resources = {
         "logout": "Log Out",
         "join": "Join Quiz",
         "create": "Create",
-        "login": "Professor Login"
+        "login": "Login"
       },
       "landing": {
         "hero_title": "Learn and Compete in Real-Time",
@@ -28,6 +28,14 @@ const resources = {
           "export": "One-Click Export",
           "access": "Instant Access"
         },
+        "benefits_title": "Unlock Your Full Potential",
+        "benefits_desc": "Creating an account gives you access to a suite of tools designed to help you grow, learn, and lead.",
+        "benefit_track_title": "Track Your Progress",
+        "benefit_track_desc": "Automatically save your quiz results, earn XP, and climb the ranks as you level up your knowledge.",
+        "benefit_create_title": "Create & Manage Quizzes",
+        "benefit_create_desc": "Design your own interactive quizzes and manage your question bank from a powerful dashboard.",
+        "benefit_rewards_title": "Earn Exclusive Rewards",
+        "benefit_rewards_desc": "Unlock unique badges for your achievements and maintain daily streaks to stay consistent.",
         "steps_title": "Empowered Learning in Three Steps",
         "steps": [
           {
@@ -68,8 +76,8 @@ const resources = {
       "auth": {
         "welcome_back": "Welcome Back",
         "create_account": "Create Account",
-        "prof_login_desc": "Professors, login to manage your quizzes.",
-        "join_desc": "Join Quriousity to start creating interactive quizzes.",
+        "prof_login_desc": "Login to manage your quizzes and track progress.",
+        "join_desc": "Join Quriousity to start learning and creating quizzes.",
         "google_login": "Continue with Google",
         "google_login_btn": "Login with Google",
         "google_register_btn": "Register with Google",
@@ -79,7 +87,7 @@ const resources = {
         "signup_btn": "Sign Up",
         "no_account": "Don't have an account?",
         "has_account": "Already have an account?",
-        "register_prof": "Register as a Professor",
+        "register_prof": "Register Now",
         "back_to_login": "Back to Login",
         "reset_password": "Reset Password",
         "reset_desc": "Enter your email address and we'll send you a link to reset your password.",
@@ -95,17 +103,17 @@ const resources = {
         "passwords_not_match": "Passwords don't match."
       },
       "dashboard": {
-        "title": "Professor Dashboard",
-        "quiz_history": "Quiz History",
+        "title": "Account Dashboard",
+        "quiz_history": "My Quizzes",
         "create_new": "Create New Quiz",
         "no_quizzes": "No quizzes yet",
         "no_quizzes_desc": "Your created quizzes will appear here.",
         "create_first": "Create First Quiz",
         "select_quiz": "Select a Quiz",
-        "select_quiz_desc": "Click on a quiz from your history to view detailed performance insights and student scores.",
+        "select_quiz_desc": "Click on a quiz from your history to view detailed performance insights.",
         "export_csv": "Export CSV",
         "session_code": "Insights for session code:",
-        "students_stat": "Students",
+        "students_stat": "Participants",
         "avg_score_stat": "Avg Score",
         "questions_stat": "Questions",
         "most_missed": "Most Missed Questions",
@@ -119,15 +127,15 @@ const resources = {
         "view_lobby": "View Lobby"
       },
       "studentDashboard": {
-        "title": "Student Dashboard",
-        "loading_achievements": "Loading your achievements...",
+        "title": "Activity & Progress",
+        "loading_achievements": "Loading your progress...",
         "hey": "Hey",
         "track_progress": "Track your progress and celebrate your learning journey.",
         "join_new": "Join New Quiz",
-        "total_points": "Total Points",
+        "total_points": "Total XP",
         "quizzes_taken": "Quizzes Taken",
         "avg_score": "Average Score",
-        "your_history": "Your Quiz History",
+        "your_history": "Recent Activity",
         "no_quizzes": "You haven't taken any quizzes yet. Ready to start?",
         "enter_code_begin": "Enter a room code to begin"
       },
@@ -292,6 +300,14 @@ const resources = {
           "export": "Exportación en un Clic",
           "access": "Acceso Instantáneo"
         },
+        "benefits_title": "Desbloquea tu Máximo Potencial",
+        "benefits_desc": "Crear una cuenta te da acceso a herramientas diseñadas para ayudarte a crecer, aprender y liderar.",
+        "benefit_track_title": "Sigue tu Progreso",
+        "benefit_track_desc": "Guarda automáticamente tus resultados, gana XP y sube de nivel a medida que dominas nuevos temas.",
+        "benefit_create_title": "Crea y Gestiona Quizzes",
+        "benefit_create_desc": "Diseña tus propios cuestionarios interactivos y gestiónalos desde un panel potente.",
+        "benefit_rewards_title": "Gana Recompensas",
+        "benefit_rewards_desc": "Desbloquea medallas únicas por tus logros y mantén rachas diarias para ser constante.",
         "steps_title": "Aprendizaje Potenciado en Tres Pasos",
         "steps": [
           {
@@ -552,6 +568,14 @@ const resources = {
           "export": "One-Click Export",
           "access": "Mabilis na Access"
         },
+        "benefits_title": "Ilabas ang Iyong Potensyal",
+        "benefits_desc": "Ang paggawa ng account ay nagbibigay sa iyo ng access sa mga tool na tutulong sa iyong lumago at matuto.",
+        "benefit_track_title": "I-track ang Iyong Progress",
+        "benefit_track_desc": "Awtomatikong i-save ang iyong mga resulta, kumita ng XP, at tumaas ang iyong level habang natututo.",
+        "benefit_create_title": "Gumawa at Mamahala",
+        "benefit_create_desc": "Gumawa ng sarili mong interactive na mga quiz at pamahalaan ang mga ito mula sa iyong dashboard.",
+        "benefit_rewards_title": "Kumuha ng mga Reward",
+        "benefit_rewards_desc": "I-unlock ang mga natatanging badge at panatilihin ang iyong streak araw-araw.",
         "steps_title": "Matuto sa Tatlong Hakbang",
         "steps": [
           {
@@ -803,6 +827,14 @@ const resources = {
           "export": "Export en un clic",
           "access": "Accès Instantané"
         },
+        "benefits_title": "Libérez votre plein potentiel",
+        "benefits_desc": "Créer un compte vous donne accès à une suite d'outils conçus pour vous aider à grandir et à apprendre.",
+        "benefit_track_title": "Suivez vos progrès",
+        "benefit_track_desc": "Enregistrez automatiquement vos résultats, gagnez de l'XP et montez en niveau au fil de vos apprentissages.",
+        "benefit_create_title": "Créez et gérez",
+        "benefit_create_desc": "Créez vos propres quiz interactifs et gérez-les depuis votre tableau de bord.",
+        "benefit_rewards_title": "Gagnez des récompenses",
+        "benefit_rewards_desc": "Débloquez des badges uniques pour vos succès et maintenez des séries quotidiennes.",
         "steps_title": "Apprentissage en Trois Étapes",
         "steps": [
           {
