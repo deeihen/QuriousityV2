@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { supabase } from '../lib/supabase';
 import { calculateScore } from '../lib/utils';
+import { checkRateLimit } from '../lib/security';
 
 interface Question {
   id: string;
@@ -58,6 +59,12 @@ const LiveQuizPage = () => {
         }]);
 
       if (error) throw error;
+
+      // Award XP to registered students
+      if (userId) {
+        await supabase.rpc('award_xp', { points_to_add: finalScore });
+      }
+
       navigate(`/results/${code}`, { state: { finalScore, playerName } });
     } catch (err: unknown) {
       console.error('Error saving score:', err instanceof Error ? err.message : String(err));
@@ -104,6 +111,17 @@ const LiveQuizPage = () => {
 
   useEffect(() => {
     const fetchQuiz = async () => {
+      const { data: quizData, error: quizError } = await supabase
+        .from('quizzes')
+        .select('id, user_id')
+        .eq('access_code', code)
+        .maybeSingle();
+
+      if (quizError || !quizData) {
+        navigate('/join');
+        return;
+      }
+
       // Get current user if any
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -115,17 +133,6 @@ const LiveQuizPage = () => {
           navigate('/dashboard');
           return;
         }
-      }
-
-      const { data: quizData, error: quizError } = await supabase
-        .from('quizzes')
-        .select('id')
-        .eq('access_code', code)
-        .maybeSingle();
-
-      if (quizError || !quizData) {
-        navigate('/join');
-        return;
       }
 
       setQuizId(quizData.id);

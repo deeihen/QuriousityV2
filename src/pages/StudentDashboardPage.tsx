@@ -23,6 +23,7 @@ const StudentDashboardPage = () => {
   const [scores, setScores] = useState<StudentScore[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
     const fetchStudentData = async () => {
@@ -32,6 +33,15 @@ const StudentDashboardPage = () => {
         return;
       }
       setUser(user);
+
+      // Fetch Profile for XP and Streaks
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      
+      setProfile(profileData);
 
       const { data, error } = await supabase
         .from('scores')
@@ -58,6 +68,15 @@ const StudentDashboardPage = () => {
     fetchStudentData();
   }, [navigate]);
 
+  const calculateLevel = (xp: number) => Math.floor(xp / 1000) + 1;
+  const getXPProgress = (xp: number) => {
+    const level = calculateLevel(xp);
+    const currentLevelXP = (level - 1) * 1000;
+    const nextLevelXP = level * 1000;
+    const progress = ((xp - currentLevelXP) / (nextLevelXP - currentLevelXP)) * 100;
+    return Math.min(Math.max(progress, 0), 100);
+  };
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -80,8 +99,10 @@ const StudentDashboardPage = () => {
     );
   }
 
-  const totalPoints = scores.reduce((acc, s) => acc + s.points, 0);
-  const avgScore = scores.length > 0 ? Math.round(totalPoints / scores.length) : 0;
+  const totalPoints = profile?.xp || 0;
+  const level = calculateLevel(totalPoints);
+  const xpProgress = getXPProgress(totalPoints);
+  const avgScore = scores.length > 0 ? Math.round(scores.reduce((acc, s) => acc + s.points, 0) / scores.length) : 0;
 
   const [userBadges, setUserBadges] = useState<any[]>([]);
   const [loadingBadges, setLoadingBadges] = useState(true);
@@ -117,15 +138,59 @@ const StudentDashboardPage = () => {
               </h1>
               <p className="text-on-surface-variant text-sm md:text-base break-words">{t('studentDashboard.track_progress')}</p>
             </div>
-            <motion.button 
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/join')}
-              className="bg-primary text-on-primary px-8 py-3 rounded-full font-bold shadow-md flex items-center gap-2 w-full md:w-auto justify-center whitespace-nowrap"
-            >
-              {t('studentDashboard.join_new')}
-              <ArrowRight size={18} className="shrink-0" />
-            </motion.button>
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              <div className="flex flex-col items-end hidden sm:flex">
+                <span className="text-[10px] font-bold text-on-surface-variant uppercase">Current Streak</span>
+                <div className="flex items-center gap-1 text-tertiary font-black">
+                  <span className="text-xl">{profile?.streak_count || 0}</span>
+                  <div className="w-5 h-5 bg-tertiary/20 rounded-full flex items-center justify-center">🔥</div>
+                </div>
+              </div>
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/join')}
+                className="bg-primary text-on-primary px-8 py-3 rounded-full font-bold shadow-md flex items-center gap-2 flex-grow md:flex-grow-0 justify-center whitespace-nowrap"
+              >
+                {t('studentDashboard.join_new')}
+                <ArrowRight size={18} className="shrink-0" />
+              </motion.button>
+            </div>
+          </section>
+
+          {/* Level Progress */}
+          <section className="bg-surface-container-lowest p-6 md:p-8 rounded-3xl border border-surface-variant shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+            <div className="relative z-10 flex flex-col gap-6">
+              <div className="flex justify-between items-end">
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Your Level</span>
+                  <h2 className="text-4xl md:text-5xl font-black text-primary">Lv. {level}</h2>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Total XP</span>
+                  <div className="text-xl md:text-2xl font-bold text-on-background">{totalPoints.toLocaleString()} XP</div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-between text-xs font-bold text-on-surface-variant">
+                  <span>Progress to Lv. {level + 1}</span>
+                  <span>{Math.round(xpProgress)}%</span>
+                </div>
+                <div className="h-4 w-full bg-surface-container-high rounded-full overflow-hidden border border-surface-variant p-0.5">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${xpProgress}%` }}
+                    transition={{ duration: 1, ease: "easeOut" }}
+                    className="h-full bg-gradient-to-r from-primary to-secondary rounded-full shadow-sm"
+                  ></motion.div>
+                </div>
+                <div className="text-[10px] text-center text-on-surface-variant italic">
+                  {1000 - (totalPoints % 1000)} XP more to level up!
+                </div>
+              </div>
+            </div>
           </section>
 
           {/* Stats Grid */}

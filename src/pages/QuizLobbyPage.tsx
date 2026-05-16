@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Play, ArrowLeft, Loader2, User as UserIcon, Trophy, Timer, StopCircle, Clock, Settings2, RefreshCw } from 'lucide-react';
+import { Users, Play, Loader2, User as UserIcon, Trophy, StopCircle, Clock, Settings2, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
 import Navbar from '../components/Navbar';
