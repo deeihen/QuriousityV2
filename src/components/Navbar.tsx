@@ -1,7 +1,9 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { User as UserIcon, ArrowLeft, Home, Play, LayoutDashboard, Library, LogOut } from 'lucide-react';
+import { User as UserIcon, ArrowLeft, Home, Play, LayoutGrid, BookOpen, LogOut, Sun, Moon, Languages } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
+import { useTheme } from '../context/ThemeContext';
 import type { User } from '@supabase/supabase-js';
 
 interface NavbarProps {
@@ -21,7 +23,11 @@ const Navbar = ({
 }: NavbarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t, i18n } = useTranslation();
+  const { theme, toggleTheme } = useTheme();
   const [user, setUser] = useState<User | null>(null);
+
+  const [showLangMenu, setShowLangMenu] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -47,6 +53,18 @@ const Navbar = ({
       navigate(-1);
     }
   };
+
+  const changeLanguage = (lng: string) => {
+    i18n.changeLanguage(lng);
+    setShowLangMenu(false);
+  };
+
+  const languages = [
+    { code: 'en', label: 'English', flag: '🇺🇸' },
+    { code: 'es', label: 'Español', flag: '🇪🇸' },
+    { code: 'tl', label: 'Tagalog', flag: '🇵🇭' },
+    { code: 'fr', label: 'Français', flag: '🇫🇷' },
+  ];
 
   const isCurrent = (path: string) => location.pathname === path;
 
@@ -89,58 +107,93 @@ const Navbar = ({
                 isCurrent('/') ? 'text-primary font-bold border-primary' : 'text-on-surface-variant hover:text-primary border-transparent'
               }`}
             >
-              Home
+              {t('navbar.home')}
             </button>
             <button 
               onClick={() => navigate('/join')} 
-              className={`transition-all text-sm h-full flex items-center px-1 border-b-2 ${
+              className={`transition-all text-sm h-full flex items-center px-1 border-b-2 whitespace-nowrap ${
                 isCurrent('/join') ? 'text-primary font-bold border-primary' : 'text-on-surface-variant hover:text-primary border-transparent'
               }`}
             >
-              Join Quiz
+              {t('navbar.join')}
             </button>
             {user && (
               <button 
                 onClick={() => navigate('/dashboard')} 
-                className={`transition-all text-sm h-full flex items-center px-1 border-b-2 ${
+                className={`transition-all text-sm h-full flex items-center px-1 border-b-2 whitespace-nowrap ${
                   isCurrent('/dashboard') ? 'text-primary font-bold border-primary' : 'text-on-surface-variant hover:text-primary border-transparent'
                 }`}
               >
-                Dashboard
+                {t('navbar.dashboard')}
               </button>
             )}
             <button 
               onClick={() => navigate('/resources')} 
-              className={`transition-all text-sm h-full flex items-center px-1 border-b-2 ${
+              className={`transition-all text-sm h-full flex items-center px-1 border-b-2 whitespace-nowrap ${
                 isCurrent('/resources') ? 'text-primary font-bold border-primary' : 'text-on-surface-variant hover:text-primary border-transparent'
               }`}
             >
-              Resources
+              {t('navbar.resources')}
             </button>
           </div>
 
           {/* Right: Actions */}
-          <div className="flex justify-end items-center gap-4">
+          <div className="flex justify-end items-center gap-2 lg:gap-4 shrink-0">
+            <div className="relative">
+              <button 
+                onClick={() => setShowLangMenu(!showLangMenu)}
+                className="p-2 text-on-surface-variant hover:text-primary rounded-full transition-colors"
+                title="Change Language"
+              >
+                <Languages size={20} />
+              </button>
+              
+              {showLangMenu && (
+                <div className="absolute right-0 mt-2 w-40 bg-surface-container-lowest border border-surface-variant rounded-xl shadow-lg overflow-hidden z-[60]">
+                  {languages.map((lang) => (
+                    <button
+                      key={lang.code}
+                      onClick={() => changeLanguage(lang.code)}
+                      className={`w-full text-left px-4 py-3 text-sm flex items-center gap-3 hover:bg-surface-variant/20 transition-colors ${
+                        i18n.language === lang.code ? 'text-primary font-bold bg-primary/5' : 'text-on-surface-variant'
+                      }`}
+                    >
+                      <span>{lang.flag}</span>
+                      {lang.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <button 
+              onClick={toggleTheme}
+              className="p-2 text-on-surface-variant hover:text-primary rounded-full transition-colors"
+              title="Toggle Theme"
+            >
+              {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+            </button>
+
             {user ? (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 lg:gap-3">
                 <button 
                   onClick={handleLogout}
-                  className="text-on-surface-variant hover:text-error transition-colors p-2 flex items-center gap-2 text-sm font-bold"
+                  className="text-on-surface-variant hover:text-error transition-colors p-2 flex items-center gap-2 text-sm font-bold whitespace-nowrap"
                   title="Logout"
                 >
                   <LogOut size={20} />
-                  <span>Logout</span>
+                  <span className="hidden lg:inline">{t('navbar.logout')}</span>
                 </button>
-                <div className="w-10 h-10 bg-primary/10 text-primary rounded-full flex items-center justify-center font-bold">
+                <div className="w-9 h-9 lg:w-10 lg:h-10 bg-primary/10 text-primary rounded-full flex items-center justify-center font-bold shrink-0">
                   {user.email?.substring(0, 1).toUpperCase()}
                 </div>
               </div>
             ) : (
               <button 
                 onClick={() => navigate('/auth')}
-                className="bg-primary text-on-primary text-sm font-bold px-6 py-2 rounded-full hover:opacity-90 transition-opacity hidden md:block shadow-sm"
+                className="bg-primary text-on-primary text-sm font-bold px-4 lg:px-6 py-2 rounded-full hover:opacity-90 transition-opacity hidden md:block shadow-sm whitespace-nowrap"
               >
-                Professor Login
+                {t('navbar.login')}
               </button>
             )}
           </div>
@@ -175,6 +228,35 @@ const Navbar = ({
             </div>
           </div>
           <div className="ml-auto flex items-center gap-2">
+            <div className="relative">
+              <button 
+                onClick={() => setShowLangMenu(!showLangMenu)}
+                className="p-2 text-on-surface-variant hover:text-primary transition-colors"
+                title="Change Language"
+              >
+                <Languages size={22} />
+              </button>
+              
+              {showLangMenu && (
+                <div className="absolute right-0 mt-2 w-40 bg-surface-container-lowest border border-surface-variant rounded-xl shadow-lg overflow-hidden z-[60]">
+                  {languages.map((lang) => (
+                    <button
+                      key={lang.code}
+                      onClick={() => changeLanguage(lang.code)}
+                      className={`w-full text-left px-4 py-3 text-sm flex items-center gap-3 hover:bg-surface-variant/20 transition-colors ${
+                        i18n.language === lang.code ? 'text-primary font-bold bg-primary/5' : 'text-on-surface-variant'
+                      }`}
+                    >
+                      <span>{lang.flag}</span>
+                      {lang.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button onClick={toggleTheme} className="p-2 text-on-surface-variant hover:text-primary">
+              {theme === 'light' ? <Moon size={22} /> : <Sun size={22} />}
+            </button>
             {user ? (
               <button onClick={handleLogout} className="p-2 text-on-surface-variant hover:text-error">
                 <LogOut size={22} />
@@ -229,7 +311,7 @@ const Navbar = ({
                     isCurrent('/dashboard') ? 'text-primary' : 'text-on-surface-variant'
                   }`}
                 >
-                  <LayoutDashboard size={20} />
+                  <LayoutGrid size={20} />
                   <span className="text-[10px] font-bold">Dashboard</span>
                 </button>
               </>
@@ -240,7 +322,7 @@ const Navbar = ({
                 isCurrent('/resources') ? 'text-primary' : 'text-on-surface-variant'
               }`}
             >
-              <Library size={20} />
+              <BookOpen size={20} />
               <span className="text-[10px] font-bold">Resources</span>
             </button>
           </div>

@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
+import { Toaster } from 'react-hot-toast';
 import { supabase } from './lib/supabase';
 import type { User } from '@supabase/supabase-js';
 import LandingPage from './pages/LandingPage';
@@ -10,6 +11,7 @@ import ResultsPage from './pages/ResultsPage';
 import CreateQuizPage from './pages/CreateQuizPage';
 import SetupPlayerPage from './pages/SetupPlayerPage';
 import DashboardPage from './pages/DashboardPage';
+import StudentDashboardPage from './pages/StudentDashboardPage';
 import ResourcesPage from './pages/ResourcesPage';
 import AuthPage from './pages/AuthPage';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -18,6 +20,7 @@ import HelpCenter from './pages/HelpCenter';
 import FeedbackPage from './pages/FeedbackPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import QuizLobbyPage from './pages/QuizLobbyPage';
 import AnimatedPage from './components/AnimatedPage';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -68,12 +71,21 @@ function AppRoutes() {
             </ProtectedRoute>
           } 
         />
+        <Route 
+          path="/student-dashboard" 
+          element={
+            <ProtectedRoute>
+              <AnimatedPage><StudentDashboardPage /></AnimatedPage>
+            </ProtectedRoute>
+          } 
+        />
         <Route path="/resources" element={<AnimatedPage><ResourcesPage /></AnimatedPage>} />
         <Route path="/privacy" element={<AnimatedPage><PrivacyPolicy /></AnimatedPage>} />
         <Route path="/terms" element={<AnimatedPage><TermsOfService /></AnimatedPage>} />
         <Route path="/help" element={<AnimatedPage><HelpCenter /></AnimatedPage>} />
         <Route path="/feedback" element={<AnimatedPage><FeedbackPage /></AnimatedPage>} />
         <Route path="/quiz/:code/setup" element={<AnimatedPage><SetupPlayerPage /></AnimatedPage>} />
+        <Route path="/quiz/:code/lobby" element={<AnimatedPage><QuizLobbyPage /></AnimatedPage>} />
         <Route path="/quiz/:code/play" element={<AnimatedPage><LiveQuizPage /></AnimatedPage>} />
         <Route path="/results/:code" element={<AnimatedPage><ResultsPage /></AnimatedPage>} />
       </Routes>
@@ -84,6 +96,7 @@ function AppRoutes() {
 function App() {
   return (
     <Router>
+      <Toaster position="top-right" />
       <AppRoutes />
     </Router>
   );
