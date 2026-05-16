@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
-import { Play, PlusCircle, QrCode, Timer, BarChart3, CheckCircle2, ChevronRight } from 'lucide-react';
+import { Play, PlusCircle, QrCode, Timer, BarChart3, CheckCircle2, ChevronRight, Trophy } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -264,7 +264,7 @@ const LandingPage = () => {
             {t('landing.steps_title')}
           </motion.h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter">
-            {(t('landing.steps', { returnObjects: true }) as any[]).map((step: any, idx: number) => {
+            {Array.isArray(t('landing.steps', { returnObjects: true })) && (t('landing.steps', { returnObjects: true }) as any[]).map((step: any, idx: number) => {
               const icons = [<QrCode size={24} />, <Timer size={24} />, <BarChart3 size={24} />];
               const colors = ["bg-primary", "bg-secondary", "bg-tertiary"];
               return (

@@ -1,32 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Literata:wght@400;500;700&family=Nunito+Sans:wght@400;500;700&display=swap');
 @import "tailwindcss";
 
-@theme {
-  --color-primary: var(--primary);
-  --color-background: var(--background);
-  --color-surface: var(--surface);
-  --color-secondary: var(--secondary);
-  --color-tertiary: var(--tertiary);
-  --color-error: var(--error);
-  --color-on-primary: var(--on-primary);
-  --color-on-background: var(--on-background);
-  --color-surface-variant: var(--surface-variant);
-  --color-on-surface-variant: var(--on-surface-variant);
-  --color-primary-container: var(--primary-container);
-  --color-surface-container-lowest: var(--surface-container-lowest);
-  --color-surface-container: var(--surface-container);
-  --color-inverse-primary: var(--inverse-primary);
-
-  --font-heading: "Literata", serif;
-  --font-body: "Nunito Sans", sans-serif;
-
-  --spacing-margin-desktop: 40px;
-  --spacing-margin-mobile: 16px;
-  --spacing-gutter: 24px;
-
-  --max-width-container-max: 1200px;
-}
-
 :root {
   --primary: #4a7c59;
   --background: #fdfcf7;
@@ -65,10 +39,38 @@
   --inverse-primary: #4a7c59;
 }
 
+@theme {
+  --color-primary: var(--primary);
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-secondary: var(--secondary);
+  --color-tertiary: var(--tertiary);
+  --color-error: var(--error);
+  --color-on-primary: var(--on-primary);
+  --color-on-background: var(--on-background);
+  --color-surface-variant: var(--surface-variant);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-primary-container: var(--primary-container);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-surface-container: var(--surface-container);
+  --color-inverse-primary: var(--inverse-primary);
+
+  --font-heading: "Literata", serif;
+  --font-body: "Nunito Sans", sans-serif;
+
+  --spacing-margin-desktop: 40px;
+  --spacing-margin-mobile: 16px;
+  --spacing-gutter: 24px;
+
+  --max-width-container-max: 1200px;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
   transition: background-color 0.3s ease, color 0.3s ease;
+  background-color: var(--background);
+  color: var(--on-background);
 }
 
 h1, h2, h3, h4, h5, h6 {
