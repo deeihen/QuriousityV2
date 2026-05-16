@@ -142,13 +142,17 @@ const Navbar = ({
             <div className="w-px h-6 bg-surface-variant/50 mx-1 hidden sm:block"></div>
 
             {user ? (
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-primary/10 text-primary border border-primary/20 rounded-full flex items-center justify-center font-bold shadow-sm">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 bg-primary/10 text-primary border border-primary/20 rounded-full flex items-center justify-center font-bold shadow-sm shrink-0">
                   {user.email?.charAt(0).toUpperCase()}
                 </div>
-                <button onClick={handleLogout} className="hidden lg:flex items-center gap-2 text-sm font-bold text-on-surface-variant hover:text-error transition-colors">
-                  <LogOut size={16} />
-                  {t('navbar.logout')}
+                <button 
+                  onClick={handleLogout} 
+                  className="flex items-center gap-2 p-2 sm:px-3 sm:py-2 text-sm font-bold text-on-surface-variant hover:text-error hover:bg-error/5 rounded-xl transition-all"
+                  title={t('navbar.logout')}
+                >
+                  <LogOut size={18} />
+                  <span className="hidden lg:inline">{t('navbar.logout')}</span>
                 </button>
               </div>
             ) : (
