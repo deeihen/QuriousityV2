@@ -81,6 +81,11 @@ const Navbar = ({
               <span className="text-2xl font-black tracking-tighter text-primary font-heading hover:opacity-80 transition-opacity">
                 Quriousity
               </span>
+              {title && (
+                <span className="hidden sm:block text-sm font-bold text-on-surface-variant uppercase tracking-widest bg-surface-variant/30 px-2 py-0.5 rounded-md border border-surface-variant/50">
+                  {title}
+                </span>
+              )}
             </div>
           </div>
 
