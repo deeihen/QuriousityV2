@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
 import { Mail, Loader2, ArrowRight, CheckCircle2 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
 const ForgotPasswordPage = () => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -32,10 +34,10 @@ const ForgotPasswordPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background font-body">
-      <Navbar showBackButton backUrl="/auth" title="Forgot Password" />
+      <Navbar showBackButton backUrl="/auth" title={t('auth.forgot_password')} />
 
-      <main className="flex-grow flex items-center justify-center pt-20 px-margin-mobile">
-        <div className="w-full max-w-md bg-surface-container-lowest rounded-2xl shadow-lg border border-surface-variant p-8 md:p-10 relative overflow-hidden">
+      <main className="flex-grow flex items-center justify-center py-12 md:py-20 px-margin-mobile">
+        <div className="w-full max-w-md bg-surface-container-lowest rounded-2xl shadow-lg border border-surface-variant p-6 md:p-10 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-2 bg-primary"></div>
           
           {submitted ? (
@@ -43,29 +45,29 @@ const ForgotPasswordPage = () => {
               <div className="w-20 h-20 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-6">
                 <CheckCircle2 size={40} />
               </div>
-              <h1 className="text-3xl font-heading text-on-background mb-4">Check Your Email</h1>
-              <p className="text-on-surface-variant mb-8">
-                We've sent a password reset link to <span className="font-bold text-on-background">{email}</span>. Please check your inbox.
+              <h1 className="text-3xl font-heading text-on-background mb-4 break-words">{t('auth.check_email')}</h1>
+              <p className="text-on-surface-variant mb-8 break-words">
+                {t('auth.reset_sent_desc')} <span className="font-bold text-on-background break-all">{email}</span>. Please check your inbox.
               </p>
               <button 
                 onClick={() => navigate('/auth')}
-                className="text-primary font-bold hover:underline"
+                className="text-primary font-bold hover:underline whitespace-nowrap"
               >
-                Back to Login
+                {t('auth.back_to_login')}
               </button>
             </div>
           ) : (
             <>
               <div className="text-center mb-8">
-                <h1 className="text-3xl font-heading text-on-background mb-2">Reset Password</h1>
-                <p className="text-on-surface-variant">
-                  Enter your email address and we'll send you a link to reset your password.
+                <h1 className="text-3xl font-heading text-on-background mb-2 break-words">{t('auth.reset_password')}</h1>
+                <p className="text-on-surface-variant break-words">
+                  {t('auth.reset_desc')}
                 </p>
               </div>
 
               <form onSubmit={handleReset} className="flex flex-col gap-6">
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-bold text-on-surface-variant uppercase tracking-wider ml-1">Email Address</label>
+                  <label className="text-sm font-bold text-on-surface-variant uppercase tracking-wider ml-1 whitespace-nowrap">{t('common.email')}</label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" size={20} />
                     <input 
@@ -79,14 +81,14 @@ const ForgotPasswordPage = () => {
                   </div>
                 </div>
 
-                {error && <p className="text-error text-sm font-bold bg-error/5 p-3 rounded-lg border border-error/20">{error}</p>}
+                {error && <p className="text-error text-sm font-bold bg-error/5 p-3 rounded-lg border border-error/20 break-words">{error}</p>}
 
                 <button 
                   type="submit"
                   disabled={loading}
-                  className="w-full h-14 bg-primary text-on-primary font-bold rounded-xl hover:opacity-90 transition-all shadow-md flex items-center justify-center gap-2"
+                  className="w-full h-14 bg-primary text-on-primary font-bold rounded-xl hover:opacity-90 transition-all shadow-md flex items-center justify-center gap-2 whitespace-nowrap px-4"
                 >
-                  {loading ? <Loader2 className="animate-spin" /> : 'Send Reset Link'}
+                  {loading ? <Loader2 className="animate-spin" /> : t('auth.send_reset_link')}
                   {!loading && <ArrowRight size={20} />}
                 </button>
               </form>
@@ -94,9 +96,9 @@ const ForgotPasswordPage = () => {
               <div className="mt-8 pt-8 border-t border-surface-variant text-center">
                 <button 
                   onClick={() => navigate('/auth')}
-                  className="text-on-surface-variant font-bold hover:text-primary transition-colors"
+                  className="text-on-surface-variant font-bold hover:text-primary transition-colors whitespace-nowrap"
                 >
-                  Back to Login
+                  {t('auth.back_to_login')}
                 </button>
               </div>
             </>
