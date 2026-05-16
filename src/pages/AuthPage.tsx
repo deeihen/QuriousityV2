@@ -53,10 +53,17 @@ const AuthPage = () => {
 
   const handleGoogleLogin = async () => {
     try {
+      // Ensure the redirect URL is absolute and correctly formatted
+      const baseUrl = window.location.origin;
+      const targetPath = from.startsWith('/') ? from : `/${from}`;
+      const finalRedirectUrl = `${baseUrl}${targetPath}`;
+
+      console.log('Redirecting to:', finalRedirectUrl);
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}${from}`
+          redirectTo: finalRedirectUrl
         }
       });
       if (error) throw error;
