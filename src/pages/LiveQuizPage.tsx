@@ -36,6 +36,9 @@ const LiveQuizPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const finishQuiz = useCallback(async (currentScore: number, currentOption: number | null, currentTimeLeft: number) => {
+    // Security: Prevent duplicate or rapid-fire submissions
+    if (!checkRateLimit('finish-quiz', 10000) || saving) return;
+    
     setSaving(true);
     const playerName = localStorage.getItem('quriousity_player_name') || 'Anonymous';
     
@@ -60,7 +63,7 @@ const LiveQuizPage = () => {
       console.error('Error saving score:', err instanceof Error ? err.message : String(err));
       navigate(`/results/${code}`, { state: { finalScore, playerName } });
     }
-  }, [code, currentIndex, navigate, questions, quizId, userId]);
+  }, [code, currentIndex, navigate, questions, quizId, userId, saving]);
 
   const handleNext = useCallback(async () => {
     if (isSubmitting || saving) return;

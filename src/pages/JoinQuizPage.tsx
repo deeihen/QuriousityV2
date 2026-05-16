@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Link as LinkIcon, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
+import { checkRateLimit } from '../lib/security';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
@@ -37,6 +38,12 @@ const JoinQuizPage = () => {
     e.preventDefault();
     const finalCode = code.join('');
     if (finalCode.length === 6) {
+      // Security: Prevent rapid-fire attempts (brute force protection)
+      if (!checkRateLimit('join-quiz', 2000)) {
+        setError('Too many attempts. Please wait a moment.');
+        return;
+      }
+
       setLoading(true);
       setError('');
       

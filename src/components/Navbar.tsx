@@ -1,10 +1,11 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { User as UserIcon, ArrowLeft, Home, Play, LayoutGrid, BookOpen, LogOut, Sun, Moon, Languages } from 'lucide-react';
+import { User as UserIcon, ArrowLeft, Home, Play, LayoutGrid, BookOpen, LogOut, Sun, Moon, Languages, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '../context/ThemeContext';
 import type { User } from '@supabase/supabase-js';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface NavbarProps {
   transparent?: boolean;
@@ -26,8 +27,16 @@ const Navbar = ({
   const { t, i18n } = useTranslation();
   const { theme, toggleTheme } = useTheme();
   const [user, setUser] = useState<User | null>(null);
-
   const [showLangMenu, setShowLangMenu] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -70,128 +79,121 @@ const Navbar = ({
 
   return (
     <>
-      {/* Top Navbar: Desktop Only */}
-      <nav className={`fixed top-0 left-0 w-full z-50 h-16 border-b transition-all hidden md:block ${
-        transparent ? 'bg-transparent border-transparent' : 'bg-surface/80 backdrop-blur-md border-surface-variant'
+      {/* Top Navbar */}
+      <nav className={`fixed top-0 left-0 w-full z-50 h-16 transition-all duration-300 ${
+        scrolled ? 'h-14 bg-surface/90 backdrop-blur-lg border-b border-surface-variant shadow-sm' : 
+        transparent ? 'bg-transparent border-transparent' : 'bg-surface border-b border-surface-variant'
       }`}>
-        <div className="max-w-container-max mx-auto px-margin-desktop h-full flex justify-between items-center w-full">
-          {/* Left: Logo / Title */}
-          <div className="flex items-center gap-2">
-            {showBackButton && (
-              <button 
-                onClick={handleBack} 
-                className="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/5 rounded-full transition-colors mr-2 cursor-pointer"
-              >
-                <ArrowLeft size={20} />
-              </button>
-            )}
+        <div className="max-w-container-max mx-auto px-4 md:px-margin-desktop h-full flex justify-between items-center w-full">
+          
+          {/* Left: Logo & Back */}
+          <div className="flex items-center gap-1 md:gap-3">
+            <AnimatePresence mode="wait">
+              {showBackButton && (
+                <motion.button 
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  onClick={handleBack} 
+                  className="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-xl transition-all mr-1"
+                >
+                  <ArrowLeft size={20} />
+                </motion.button>
+              )}
+            </AnimatePresence>
+
             <div 
-              className="text-2xl font-extrabold text-primary font-heading cursor-pointer flex items-center gap-2" 
+              className="flex items-center gap-2 group cursor-pointer" 
               onClick={() => navigate('/')}
             >
-              <span>Quriousity</span>
-              {title && (
-                <>
-                  <span className="text-surface-variant font-light">/</span>
-                  <span className="text-on-surface-variant text-lg font-bold">{title}</span>
-                </>
-              )}
+              <div className="w-8 h-8 md:w-9 md:h-9 bg-primary rounded-xl flex items-center justify-center text-on-primary font-black shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
+                Q
+              </div>
+              <div className="hidden sm:flex flex-col">
+                <span className="text-lg md:text-xl font-black text-primary font-heading leading-tight">Quriousity</span>
+                {title && (
+                  <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest leading-none">
+                    {title}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Center: Navigation Links */}
-          <div className="flex gap-8 justify-center items-center h-full">
-            <button 
-              onClick={() => navigate('/')} 
-              className={`transition-all text-sm h-full flex items-center px-1 border-b-2 ${
-                isCurrent('/') ? 'text-primary font-bold border-primary' : 'text-on-surface-variant hover:text-primary border-transparent'
-              }`}
-            >
-              {t('navbar.home')}
-            </button>
-            <button 
-              onClick={() => navigate('/join')} 
-              className={`transition-all text-sm h-full flex items-center px-1 border-b-2 whitespace-nowrap ${
-                isCurrent('/join') ? 'text-primary font-bold border-primary' : 'text-on-surface-variant hover:text-primary border-transparent'
-              }`}
-            >
-              {t('navbar.join')}
-            </button>
+          {/* Center: Desktop Navigation */}
+          <div className="hidden md:flex gap-1 items-center bg-surface-container/30 p-1 rounded-2xl border border-surface-variant/50">
+            <NavBtn onClick={() => navigate('/')} active={isCurrent('/')} label={t('navbar.home')} icon={<Home size={16} />} />
+            <NavBtn onClick={() => navigate('/join')} active={isCurrent('/join')} label={t('navbar.join')} icon={<Play size={16} />} />
             {user && (
-              <button 
-                onClick={() => navigate('/dashboard')} 
-                className={`transition-all text-sm h-full flex items-center px-1 border-b-2 whitespace-nowrap ${
-                  isCurrent('/dashboard') ? 'text-primary font-bold border-primary' : 'text-on-surface-variant hover:text-primary border-transparent'
-                }`}
-              >
-                {t('navbar.dashboard')}
-              </button>
+              <NavBtn onClick={() => navigate('/dashboard')} active={isCurrent('/dashboard')} label={t('navbar.dashboard')} icon={<LayoutGrid size={16} />} />
             )}
-            <button 
-              onClick={() => navigate('/resources')} 
-              className={`transition-all text-sm h-full flex items-center px-1 border-b-2 whitespace-nowrap ${
-                isCurrent('/resources') ? 'text-primary font-bold border-primary' : 'text-on-surface-variant hover:text-primary border-transparent'
-              }`}
-            >
-              {t('navbar.resources')}
-            </button>
+            <NavBtn onClick={() => navigate('/resources')} active={isCurrent('/resources')} label={t('navbar.resources')} icon={<BookOpen size={16} />} />
           </div>
 
           {/* Right: Actions */}
-          <div className="flex justify-end items-center gap-2 lg:gap-4 shrink-0">
+          <div className="flex items-center gap-1 md:gap-2">
             <div className="relative">
               <button 
                 onClick={() => setShowLangMenu(!showLangMenu)}
-                className="p-2 text-on-surface-variant hover:text-primary rounded-full transition-colors"
-                title="Change Language"
+                className="p-2.5 text-on-surface-variant hover:text-primary hover:bg-primary/5 rounded-xl transition-all"
               >
                 <Languages size={20} />
               </button>
               
-              {showLangMenu && (
-                <div className="absolute right-0 mt-2 w-40 bg-surface-container-lowest border border-surface-variant rounded-xl shadow-lg overflow-hidden z-[60]">
-                  {languages.map((lang) => (
-                    <button
-                      key={lang.code}
-                      onClick={() => changeLanguage(lang.code)}
-                      className={`w-full text-left px-4 py-3 text-sm flex items-center gap-3 hover:bg-surface-variant/20 transition-colors ${
-                        i18n.language === lang.code ? 'text-primary font-bold bg-primary/5' : 'text-on-surface-variant'
-                      }`}
-                    >
-                      <span>{lang.flag}</span>
-                      {lang.label}
-                    </button>
-                  ))}
-                </div>
-              )}
+              <AnimatePresence>
+                {showLangMenu && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute right-0 mt-3 w-48 bg-surface-container-lowest border border-surface-variant rounded-2xl shadow-xl overflow-hidden z-[60] p-1.5"
+                  >
+                    {languages.map((lang) => (
+                      <button
+                        key={lang.code}
+                        onClick={() => changeLanguage(lang.code)}
+                        className={`w-full text-left px-4 py-3 text-sm flex items-center gap-3 rounded-xl transition-all ${
+                          i18n.language === lang.code ? 'text-primary font-bold bg-primary/10' : 'text-on-surface-variant hover:bg-surface-variant/30'
+                        }`}
+                      >
+                        <span className="text-base">{lang.flag}</span>
+                        {lang.label}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
             
             <button 
               onClick={toggleTheme}
-              className="p-2 text-on-surface-variant hover:text-primary rounded-full transition-colors"
-              title="Toggle Theme"
+              className="p-2.5 text-on-surface-variant hover:text-primary hover:bg-primary/5 rounded-xl transition-all"
             >
               {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
             </button>
 
+            <div className="w-px h-6 bg-surface-variant mx-1 hidden sm:block"></div>
+
             {user ? (
-              <div className="flex items-center gap-2 lg:gap-3">
+              <div className="flex items-center gap-2 ml-1">
                 <button 
                   onClick={handleLogout}
-                  className="text-on-surface-variant hover:text-error transition-colors p-2 flex items-center gap-2 text-sm font-bold whitespace-nowrap"
-                  title="Logout"
+                  className="hidden lg:flex items-center gap-2 px-4 py-2 text-sm font-bold text-on-surface-variant hover:text-error hover:bg-error/5 rounded-xl transition-all"
                 >
-                  <LogOut size={20} />
-                  <span className="hidden lg:inline">{t('navbar.logout')}</span>
+                  <LogOut size={18} />
+                  {t('navbar.logout')}
                 </button>
-                <div className="w-9 h-9 lg:w-10 lg:h-10 bg-primary/10 text-primary rounded-full flex items-center justify-center font-bold shrink-0">
+                <div 
+                  className="w-9 h-9 md:w-10 md:h-10 bg-primary/10 text-primary border border-primary/20 rounded-xl flex items-center justify-center font-black shadow-sm"
+                  title={user.email || ''}
+                >
                   {user.email?.substring(0, 1).toUpperCase()}
                 </div>
               </div>
             ) : (
               <button 
                 onClick={() => navigate('/auth')}
-                className="bg-primary text-on-primary text-sm font-bold px-4 lg:px-6 py-2 rounded-full hover:opacity-90 transition-opacity hidden md:block shadow-sm whitespace-nowrap"
+                className="bg-primary text-on-primary text-sm font-bold px-5 py-2.5 rounded-xl hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-primary/20 whitespace-nowrap ml-2"
               >
                 {t('navbar.login')}
               </button>
@@ -200,155 +202,68 @@ const Navbar = ({
         </div>
       </nav>
 
-      {/* Mobile Top App Bar */}
-      <nav className={`fixed top-0 left-0 w-full z-50 h-14 border-b flex md:hidden items-center transition-all ${
-        transparent ? 'bg-transparent border-transparent' : 'bg-surface/80 backdrop-blur-md border-surface-variant'
-      }`}>
-        <div className="w-full max-w-container-max mx-auto px-4 flex items-center h-full">
-          <div className="flex items-center gap-2">
-            {showBackButton && (
-              <button 
-                onClick={handleBack} 
-                className="p-1.5 text-on-surface-variant hover:text-primary rounded-full"
-              >
-                <ArrowLeft size={18} />
-              </button>
-            )}
-            <div 
-              className="text-lg font-extrabold text-primary font-heading cursor-pointer flex items-center gap-1.5"
-              onClick={() => navigate('/')}
-            >
-              <span>Quriousity</span>
-              {title && (
-                <span className="text-on-surface-variant text-sm font-bold truncate max-w-[120px]">
-                  <span className="text-surface-variant font-light mx-1">/</span>
-                  {title}
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="ml-auto flex items-center gap-2">
-            <div className="relative">
-              <button 
-                onClick={() => setShowLangMenu(!showLangMenu)}
-                className="p-2 text-on-surface-variant hover:text-primary transition-colors"
-                title="Change Language"
-              >
-                <Languages size={22} />
-              </button>
-              
-              {showLangMenu && (
-                <div className="absolute right-0 mt-2 w-40 bg-surface-container-lowest border border-surface-variant rounded-xl shadow-lg overflow-hidden z-[60]">
-                  {languages.map((lang) => (
-                    <button
-                      key={lang.code}
-                      onClick={() => changeLanguage(lang.code)}
-                      className={`w-full text-left px-4 py-3 text-sm flex items-center gap-3 hover:bg-surface-variant/20 transition-colors ${
-                        i18n.language === lang.code ? 'text-primary font-bold bg-primary/5' : 'text-on-surface-variant'
-                      }`}
-                    >
-                      <span>{lang.flag}</span>
-                      {lang.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <button onClick={toggleTheme} className="p-2 text-on-surface-variant hover:text-primary">
-              {theme === 'light' ? <Moon size={22} /> : <Sun size={22} />}
-            </button>
-            {user ? (
-              <button onClick={handleLogout} className="p-2 text-on-surface-variant hover:text-error">
-                <LogOut size={22} />
-              </button>
-            ) : (
-              <button onClick={() => navigate('/auth')} className="p-2 text-on-surface-variant hover:text-primary">
-                <UserIcon size={22} />
-              </button>
-            )}
-          </div>
-        </div>
-      </nav>
-
       {/* Mobile Bottom Navigation Bar */}
       {!hideBottomNav && (
-        <nav className="fixed bottom-0 left-0 w-full bg-surface/95 backdrop-blur-md border-t border-surface-variant z-50 md:hidden">
-          <div className={`max-w-container-max mx-auto flex justify-around items-center h-16 px-2 ${user ? '' : 'px-8'}`}>
-            <button 
-              onClick={() => navigate('/')}
-              className={`flex-1 flex flex-col items-center gap-1 transition-colors ${
-                isCurrent('/') ? 'text-primary' : 'text-on-surface-variant'
-              }`}
-            >
-              <Home size={20} />
-              <span className="text-[10px] font-bold">Home</span>
-            </button>
-            <button 
-              onClick={() => navigate('/join')}
-              className={`flex-1 flex flex-col items-center gap-1 transition-colors ${
-                isCurrent('/join') ? 'text-primary' : 'text-on-surface-variant'
-              }`}
-            >
-              <Play size={20} />
-              <span className="text-[10px] font-bold">Join</span>
-            </button>
-            {user && (
+        <nav className="fixed bottom-0 left-0 w-full bg-surface/80 backdrop-blur-xl border-t border-surface-variant z-50 md:hidden pb-[env(safe-area-inset-bottom)]">
+          <div className="max-w-container-max mx-auto flex justify-between items-center h-16 px-4">
+            <BottomNavBtn onClick={() => navigate('/')} active={isCurrent('/')} label="Home" icon={<Home size={22} />} />
+            <BottomNavBtn onClick={() => navigate('/join')} active={isCurrent('/join')} label="Join" icon={<Play size={22} />} />
+            
+            {user ? (
               <>
-                <button 
-                  onClick={() => navigate('/create')}
-                  className={`flex-1 flex flex-col items-center gap-1 transition-colors relative ${
-                    location.pathname === '/create' ? 'text-primary' : 'text-on-surface-variant'
-                  }`}
-                >
-                  <div className="p-3 bg-primary rounded-full -mt-10 shadow-lg border-4 border-surface group active:scale-95 transition-transform flex items-center justify-center">
-                    <Plus size={24} className="text-on-primary" />
-                  </div>
-                  <span className="text-[10px] font-bold mt-1">Create</span>
-                </button>
-                <button 
-                  onClick={() => navigate('/dashboard')}
-                  className={`flex-1 flex flex-col items-center gap-1 transition-colors ${
-                    isCurrent('/dashboard') ? 'text-primary' : 'text-on-surface-variant'
-                  }`}
-                >
-                  <LayoutGrid size={20} />
-                  <span className="text-[10px] font-bold">Dashboard</span>
-                </button>
+                <div className="relative -mt-10 px-2">
+                  <motion.button 
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => navigate('/create')}
+                    className="w-14 h-14 bg-primary rounded-2xl shadow-xl shadow-primary/30 flex items-center justify-center border-4 border-surface"
+                  >
+                    <Plus size={28} className="text-on-primary" />
+                  </motion.button>
+                </div>
+                <BottomNavBtn onClick={() => navigate('/dashboard')} active={isCurrent('/dashboard')} label="Dashboard" icon={<LayoutGrid size={22} />} />
               </>
-            )}
-            <button 
-              onClick={() => navigate('/resources')}
-              className={`flex-1 flex flex-col items-center gap-1 transition-colors ${
-                isCurrent('/resources') ? 'text-primary' : 'text-on-surface-variant'
-              }`}
-            >
-              <BookOpen size={20} />
-              <span className="text-[10px] font-bold">Resources</span>
-            </button>
+            ) : null}
+            
+            <BottomNavBtn onClick={() => navigate('/resources')} active={isCurrent('/resources')} label="Resources" icon={<BookOpen size={22} />} />
           </div>
-          {/* Safe Area Spacer for iOS */}
-          <div className="h-[env(safe-area-inset-bottom)] bg-surface"></div>
         </nav>
       )}
     </>
   );
 };
 
-const Plus = ({ size, className }: { size?: number, className?: string }) => (
-  <svg 
-    width={size || 24} 
-    height={size || 24} 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="3" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={className}
+interface NavBtnProps {
+  onClick: () => void;
+  active: boolean;
+  label: string;
+  icon: React.ReactNode;
+}
+
+const NavBtn = ({ onClick, active, label, icon }: NavBtnProps) => (
+  <button 
+    onClick={onClick} 
+    className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all ${
+      active ? 'bg-primary text-on-primary shadow-md' : 'text-on-surface-variant hover:bg-surface-variant/50 hover:text-primary'
+    }`}
   >
-    <line x1="12" y1="5" x2="12" y2="19" />
-    <line x1="5" y1="12" x2="19" y2="12" />
-  </svg>
+    {icon}
+    {label}
+  </button>
+);
+
+const BottomNavBtn = ({ onClick, active, label, icon }: NavBtnProps) => (
+  <button 
+    onClick={onClick}
+    className={`flex-1 flex flex-col items-center justify-center gap-1 transition-all py-1 ${
+      active ? 'text-primary' : 'text-on-surface-variant'
+    }`}
+  >
+    <div className={`p-1.5 rounded-xl transition-all ${active ? 'bg-primary/10' : ''}`}>
+      {icon}
+    </div>
+    <span className={`text-[10px] font-bold tracking-tight ${active ? 'opacity-100' : 'opacity-60'}`}>{label}</span>
+  </button>
 );
 
 export default Navbar;
