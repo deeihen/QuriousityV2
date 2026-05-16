@@ -151,6 +151,31 @@ const DashboardPage = () => {
     }
   };
 
+  const getScoreDistribution = () => {
+    if (scores.length === 0) return [];
+    
+    // Create 5 buckets: 0-20%, 21-40%, etc.
+    const maxScore = questions.length * 120; // Approx max possible
+    const buckets = [
+      { name: '0-20%', range: [0, maxScore * 0.2], count: 0 },
+      { name: '21-40%', range: [maxScore * 0.2, maxScore * 0.4], count: 0 },
+      { name: '41-60%', range: [maxScore * 0.4, maxScore * 0.6], count: 0 },
+      { name: '61-80%', range: [maxScore * 0.6, maxScore * 0.8], count: 0 },
+      { name: '81-100%', range: [maxScore * 0.8, Infinity], count: 0 },
+    ];
+
+    scores.forEach(s => {
+      for (const bucket of buckets) {
+        if (s.points >= bucket.range[0] && s.points < bucket.range[1]) {
+          bucket.count++;
+          break;
+        }
+      }
+    });
+
+    return buckets;
+  };
+
   const getMissedData = () => {
     return questions.map((q, idx) => {
       const qResponses = responses.filter(r => r.question_id === q.id);
@@ -558,7 +583,7 @@ const DashboardPage = () => {
                   </motion.div>
 
                   {/* Analytics Charts */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <motion.section 
                       variants={cardVariants}
                       className="bg-surface-container-lowest p-4 md:p-6 rounded-xl border border-surface-variant shadow-sm flex flex-col"
@@ -567,7 +592,7 @@ const DashboardPage = () => {
                         <BarChart size={18} className="text-error shrink-0" />
                         {t('dashboard.most_missed')}
                       </h3>
-                      <div className="w-full h-[250px]">
+                      <div className="w-full h-[200px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <RechartsBarChart data={getMissedData()}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--surface-variant)" />
@@ -588,10 +613,34 @@ const DashboardPage = () => {
                       className="bg-surface-container-lowest p-4 md:p-6 rounded-xl border border-surface-variant shadow-sm flex flex-col"
                     >
                       <h3 className="font-bold text-on-background mb-6 flex items-center gap-2 break-words shrink-0">
+                        <Trophy size={18} className="text-tertiary shrink-0" />
+                        Score Range
+                      </h3>
+                      <div className="w-full h-[200px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <RechartsBarChart data={getScoreDistribution()}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--surface-variant)" />
+                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: 'var(--on-surface-variant)', fontSize: 9}} />
+                            <YAxis axisLine={false} tickLine={false} tick={{fill: 'var(--on-surface-variant)', fontSize: 10}} />
+                            <Tooltip 
+                              cursor={{fill: 'var(--surface-container)'}}
+                              contentStyle={{backgroundColor: 'var(--surface-container-lowest)', borderColor: 'var(--surface-variant)', borderRadius: '8px', fontSize: '12px'}}
+                            />
+                            <Bar dataKey="count" fill="var(--tertiary)" radius={[4, 4, 0, 0]} />
+                          </RechartsBarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </motion.section>
+
+                    <motion.section 
+                      variants={cardVariants}
+                      className="bg-surface-container-lowest p-4 md:p-6 rounded-xl border border-surface-variant shadow-sm flex flex-col"
+                    >
+                      <h3 className="font-bold text-on-background mb-6 flex items-center gap-2 break-words shrink-0">
                         <Timer size={18} className="text-secondary shrink-0" />
                         {t('dashboard.avg_time')}
                       </h3>
-                      <div className="w-full h-[250px]">
+                      <div className="w-full h-[200px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <LineChart data={getTimeData()}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--surface-variant)" />

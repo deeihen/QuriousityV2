@@ -58,6 +58,12 @@ const LiveQuizPage = () => {
         }]);
 
       if (error) throw error;
+
+      // Award XP to registered students
+      if (userId) {
+        await supabase.rpc('award_xp', { points_to_add: finalScore });
+      }
+
       navigate(`/results/${code}`, { state: { finalScore, playerName } });
     } catch (err: unknown) {
       console.error('Error saving score:', err instanceof Error ? err.message : String(err));

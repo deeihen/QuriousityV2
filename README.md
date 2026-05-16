@@ -1,73 +1,44 @@
-# React + TypeScript + Vite
+# Quriousity V2 - Real-Time Learning Platform
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Quriousity V2 is a modern, interactive quiz platform designed for students and professors. It facilitates real-time engagement, live leaderboards, and deep performance analytics.
 
-Currently, two official plugins are available:
+## 🚀 Key Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+### 🎮 Student Gamification (New!)
+- **XP & Leveling System:** Earn points to level up and track progress.
+- **Daily Streaks:** Stay motivated with consecutive activity tracking.
+- **Achievements:** Unlock badges like "Quiz Master" and "Perfect Aim."
 
-## React Compiler
+### 📊 Advanced Professor Analytics (New!)
+- **Visual Insights:** High-quality charts showing "Most Missed Questions," "Score Distribution," and "Average Time per Question."
+- **Export Capabilities:** Generate professional PDF class reports or download CSV data for detailed analysis.
+- **Live Monitoring:** Real-time lobby and session management.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 🛡️ Hardened Security
+- **Row Level Security (RLS):** Fully isolated data environments ensuring professors only see their own quizzes and student scores are protected.
+- **Abuse Prevention:** Intelligent rate-limiting on all critical actions to prevent spam and brute-force attacks.
 
-## Expanding the ESLint configuration
+### 📱 Progressive Web App (PWA)
+- **Native Experience:** "Install" the app on your mobile device for full-screen, native-feeling interactions.
+- **Performance:** Optimized for fast load times even on spotty school networks.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🛠️ Tech Stack
+- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS v4, Recharts, Framer Motion.
+- **Backend:** Supabase (Auth, Database, Realtime).
+- **Internationalization:** Multi-language support (EN, ES, TL, FR).
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 🚦 Getting Started
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+1. **Clone & Install:**
+   ```bash
+   git clone https://github.com/deeihen/QuriousityV2
+   npm install
+   ```
+2. **Environment Setup:** Create a `.env` file with your `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
+3. **Run Locally:**
+   ```bash
+   npm run dev
+   ```
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+---
+*Created with ❤️ for Educators and Learners.*
