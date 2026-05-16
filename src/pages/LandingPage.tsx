@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
-import { Play, PlusCircle, QrCode, Timer, BarChart3, CheckCircle2, ChevronRight, Trophy } from 'lucide-react';
+import { Play, PlusCircle, QrCode, Timer, BarChart3, CheckCircle2, ChevronRight, Trophy, LayoutGrid } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
