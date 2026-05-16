@@ -169,17 +169,19 @@ const Navbar = ({
           <div className="flex justify-around items-center h-16">
             <MobileTab onClick={() => navigate('/')} active={isCurrent('/')} icon={<Home size={22} />} label="Home" />
             <MobileTab onClick={() => navigate('/join')} active={isCurrent('/join')} icon={<Play size={22} />} label="Join" />
-            {user && (
-              <div className="relative -mt-6">
-                <button 
-                  onClick={() => navigate('/create')}
-                  className="w-14 h-14 bg-primary text-on-primary rounded-2xl shadow-xl flex items-center justify-center border-4 border-surface active:scale-90 transition-transform"
-                >
-                  <Plus size={28} />
-                </button>
-              </div>
-            )}
-            <MobileTab onClick={() => navigate('/dashboard')} active={isCurrent('/dashboard')} icon={<LayoutGrid size={22} />} label="Dashboard" />
+            {user ? (
+              <>
+                <div className="relative -mt-6">
+                  <button 
+                    onClick={() => navigate('/create')}
+                    className="w-14 h-14 bg-primary text-on-primary rounded-2xl shadow-xl flex items-center justify-center border-4 border-surface active:scale-90 transition-transform"
+                  >
+                    <Plus size={28} />
+                  </button>
+                </div>
+                <MobileTab onClick={() => navigate('/dashboard')} active={isCurrent('/dashboard')} icon={<LayoutGrid size={22} />} label="Dashboard" />
+              </>
+            ) : null}
             <MobileTab onClick={() => navigate('/resources')} active={isCurrent('/resources')} icon={<BookOpen size={22} />} label="Resources" />
           </div>
         </nav>

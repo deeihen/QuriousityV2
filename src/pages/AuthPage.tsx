@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
@@ -16,6 +16,16 @@ const AuthPage = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate('/dashboard', { replace: true });
+      }
+    };
+    checkUser();
+  }, [navigate]);
 
   // Get the redirect path from location state, default to /dashboard
   const from = (location.state as any)?.from?.pathname || '/dashboard';

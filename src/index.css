@@ -1,6 +1,44 @@
 @import url('https://fonts.googleapis.com/css2?family=Literata:wght@400;500;700&family=Nunito+Sans:wght@400;500;700&display=swap');
 @import "tailwindcss";
 
+:root {
+  --primary: #4a7c59;
+  --background: #fdfcf7;
+  --surface: #fdfcf7;
+  --secondary: #6b6358;
+  --tertiary: #705c30;
+  --error: #b83230;
+  --on-primary: #ffffff;
+  --on-background: #2e3230;
+  --surface-variant: #e4e0d8;
+  --on-surface-variant: #4a4e4a;
+  --primary-container: #78a886;
+  --surface-container-lowest: #ffffff;
+  --surface-container: #f0ece4;
+  --inverse-primary: #8ecf9e;
+  
+  font-family: 'Nunito Sans', sans-serif;
+  background-color: var(--background);
+  color: var(--on-background);
+}
+
+[data-theme='dark'] {
+  --primary: #8ecf9e;
+  --background: #121412;
+  --surface: #121412;
+  --secondary: #c9c2b3;
+  --tertiary: #dfc48c;
+  --error: #ffb4ab;
+  --on-primary: #00391c;
+  --on-background: #e2e3de;
+  --surface-variant: #424940;
+  --on-surface-variant: #c2c9be;
+  --primary-container: #2e5033;
+  --surface-container-lowest: #0d0f0d;
+  --surface-container: #1a1c1a;
+  --inverse-primary: #4a7c59;
+}
+
 @theme {
   --color-primary: var(--primary);
   --color-background: var(--background);
@@ -27,48 +65,12 @@
   --max-width-container-max: 1200px;
 }
 
-:root {
-  --primary: #4a7c59;
-  --background: #faf6f0;
-  --surface: #faf6f0;
-  --secondary: #6b6358;
-  --tertiary: #705c30;
-  --error: #b83230;
-  --on-primary: #ffffff;
-  --on-background: #2e3230;
-  --surface-variant: #e4e0d8;
-  --on-surface-variant: #4a4e4a;
-  --primary-container: #78a886;
-  --surface-container-lowest: #ffffff;
-  --color-surface-container: #f0ece4;
-  --inverse-primary: #8ecf9e;
-  
-  font-family: 'Nunito Sans', sans-serif;
-  background-color: var(--background);
-  color: var(--on-background);
-}
-
-[data-theme='dark'] {
-  --primary: #8ecf9e;
-  --background: #1a1c1a;
-  --surface: #1a1c1a;
-  --secondary: #c9c2b3;
-  --tertiary: #dfc48c;
-  --error: #ffb4ab;
-  --on-primary: #00391c;
-  --on-background: #e2e3de;
-  --surface-variant: #424940;
-  --on-surface-variant: #c2c9be;
-  --primary-container: #2e5033;
-  --surface-container-lowest: #0d0f0d;
-  --color-surface-container: #2a2e2a;
-  --inverse-primary: #4a7c59;
-}
-
 body {
   margin: 0;
   min-height: 100vh;
   transition: background-color 0.3s ease, color 0.3s ease;
+  background-color: var(--background);
+  color: var(--on-background);
 }
 
 h1, h2, h3, h4, h5, h6 {

@@ -172,16 +172,51 @@ const QuizLobbyPage = () => {
             if (localIsProfessor) fetchLeaderboard(quizData.id);
           }
         )
-        .subscribe();
+        .subscribe(async (status) => {
+          if (status === 'SUBSCRIBED' && !localIsProfessor) {
+            // After subscribing, do one final manual check to see if we missed the "live" transition
+            const { data: latestQuiz } = await supabase
+              .from('quizzes')
+              .select('status')
+              .eq('id', quizData.id)
+              .single();
+            
+            if (latestQuiz?.status === 'live') {
+              navigate(`/quiz/${code}/play`);
+            }
+          }
+        });
+
+      // Fallback Polling (Every 3 seconds) for students only
+      let pollInterval: any;
+      if (!localIsProfessor) {
+        pollInterval = setInterval(async () => {
+          const { data: pollData } = await supabase
+            .from('quizzes')
+            .select('status')
+            .eq('id', quizData.id)
+            .single();
+          
+          if (pollData?.status === 'live') {
+            clearInterval(pollInterval);
+            navigate(`/quiz/${code}/play`);
+          }
+        }, 3000);
+      }
+      
+      return () => {
+        if (pollInterval) clearInterval(pollInterval);
+      };
     };
 
-    initLobby();
+    const cleanup = initLobby();
 
     return () => {
       mounted = false;
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
       }
+      cleanup.then(fn => fn && typeof fn === 'function' && fn());
     };
   }, [code, navigate, fetchLeaderboard]);
 
