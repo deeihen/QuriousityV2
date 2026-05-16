@@ -80,7 +80,7 @@ npm run dev
 ## 📖 Documentation
 - [Security & RLS Guide](SECURITY_GUIDE.md) - Crucial steps to secure your backend.
 - [Contributing Guidelines](CONTRIBUTING.md) - How to help improve Quriousity.
-- [Phase 9 Changelog](CHANGELOG_PHASE9.md) - Details on the latest major update.
+- [Project Changelog](CHANGELOG.md) - Details on the latest major updates.
 
 ---
 

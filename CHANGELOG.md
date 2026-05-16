@@ -1,6 +1,8 @@
-# Quriousity V2 - Phase 9 Changelog & Updates
+# Quriousity V2 - Changelog & Updates
 
-This document summarizes the major features, optimizations, and bug fixes implemented during Phase 9.
+This document tracks all major features, optimizations, and bug fixes implemented in Quriousity V2.
+
+## Recent Updates (Phase 9)
 
 ## 1. Multi-Language Support (i18n)
 - **Implemented System-wide Internationalization:** Integrated `react-i18next` across the entire application.
