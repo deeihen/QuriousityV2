@@ -88,13 +88,14 @@ const DashboardPage = () => {
   const navigate = useNavigate();
   
   // App State
-  const [activeTab, setActiveTab] = useState<'quizzes' | 'activity'>('quizzes');
+  const [activeTab, setActiveTab] = useState<'quizzes' | 'activity' | 'discover'>('quizzes');
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
 
   // Quizzes State (Professor View)
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [officialQuizzes, setOfficialQuizzes] = useState<Quiz[]>([]);
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
   const [loadingInsights, setLoadingInsights] = useState(false);
   const [scores, setScores] = useState<ParticipantScore[]>([]);
@@ -117,17 +118,19 @@ const DashboardPage = () => {
         setUser(authUser);
 
         // Parallel fetch for speed
-        const [profileRes, quizzesRes, takenRes, badgesRes] = await Promise.all([
+        const [profileRes, quizzesRes, takenRes, badgesRes, officialRes] = await Promise.all([
           supabase.from('profiles').select('*').eq('user_id', authUser.id).maybeSingle(),
           supabase.from('quizzes').select('*').eq('user_id', authUser.id).order('created_at', { ascending: false }),
           supabase.from('scores').select('id, points, created_at, quizzes(title, access_code)').eq('user_id', authUser.id).order('created_at', { ascending: false }),
-          supabase.from('user_badges').select('awarded_at, badges(*)').eq('user_id', authUser.id)
+          supabase.from('user_badges').select('awarded_at, badges(*)').eq('user_id', authUser.id),
+          supabase.from('quizzes').select('*').eq('is_official', true)
         ]);
 
         setProfile(profileRes.data);
         setQuizzes(quizzesRes.data || []);
         setStudentScores(takenRes.data as any || []);
         setUserBadges(badgesRes.data || []);
+        setOfficialQuizzes(officialRes.data || []);
       } catch (err) {
         console.error('Init Error:', err);
       } finally {
@@ -295,6 +298,13 @@ const DashboardPage = () => {
               {t('studentDashboard.title')}
               {activeTab === 'activity' && <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full" />}
             </button>
+            <button 
+              onClick={() => setActiveTab('discover')}
+              className={`pb-4 text-sm font-bold transition-all relative whitespace-nowrap ${activeTab === 'discover' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+            >
+              {t('dashboard.discover')}
+              {activeTab === 'discover' && <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full" />}
+            </button>
           </div>
 
           {/* Tab Content */}
@@ -431,7 +441,7 @@ const DashboardPage = () => {
                   )}
                 </div>
               </motion.div>
-            ) : (
+            ) : activeTab === 'activity' ? (
               <motion.div 
                 key="activity" 
                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
@@ -501,6 +511,48 @@ const DashboardPage = () => {
                       )}
                     </div>
                   </div>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="discover" 
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                className="flex flex-col gap-8"
+              >
+                <div className="flex flex-col gap-2">
+                  <h3 className="text-2xl font-black text-on-background">{t('dashboard.featured_quizzes')}</h3>
+                  <p className="text-on-surface-variant text-sm">Ready-to-play sample quizzes provided by Quriousity.</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {officialQuizzes.length === 0 ? (
+                    <div className="col-span-full py-20 text-center text-on-surface-variant italic">No featured quizzes available right now.</div>
+                  ) : (
+                    officialQuizzes.map(quiz => (
+                      <div key={quiz.id} className="bg-surface-container-lowest border border-surface-variant rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group flex flex-col gap-6 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform duration-700"></div>
+                        
+                        <div className="relative z-10 flex flex-col gap-2">
+                          <span className="text-[10px] font-bold text-primary uppercase tracking-widest bg-primary/10 px-2 py-0.5 rounded-full self-start">Official</span>
+                          <h4 className="text-lg font-black text-on-background leading-tight">{quiz.title}</h4>
+                        </div>
+
+                        <div className="relative z-10 mt-auto flex items-center justify-between">
+                          <div className="flex flex-col">
+                            <span className="text-[10px] font-bold text-on-surface-variant uppercase">Access Code</span>
+                            <span className="font-black text-primary">{quiz.access_code}</span>
+                          </div>
+                          <button 
+                            onClick={() => navigate(`/quiz/${quiz.access_code}/setup`)}
+                            className="bg-primary text-on-primary px-4 py-2 rounded-xl text-xs font-bold shadow-sm hover:opacity-90 active:scale-95 transition-all flex items-center gap-2"
+                          >
+                            {t('dashboard.play_now')}
+                            <ArrowRight size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </motion.div>
             )}

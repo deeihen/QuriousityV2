@@ -124,7 +124,10 @@ const resources = {
         "end_session": "End Session",
         "restart_session": "Restart Session",
         "enter_lobby": "Enter Lobby",
-        "view_lobby": "View Lobby"
+        "view_lobby": "View Lobby",
+        "discover": "Discover",
+        "featured_quizzes": "Featured Quizzes",
+        "play_now": "Play Now"
       },
       "studentDashboard": {
         "title": "Activity & Progress",
@@ -392,7 +395,10 @@ const resources = {
         "avg_time": "Tiempo prom. por pregunta (s)",
         "leaderboard": "Tabla de clasificación",
         "no_participants": "Sin participantes aún.",
-        "question_breakdown": "Desglose de preguntas"
+        "question_breakdown": "Desglose de preguntas",
+        "discover": "Descubrir",
+        "featured_quizzes": "Quizzes Destacados",
+        "play_now": "Jugar Ahora"
       },
       "studentDashboard": {
         "title": "Panel del Estudiante",
@@ -660,7 +666,10 @@ const resources = {
         "avg_time": "Average na Oras bawat Tanong (s)",
         "leaderboard": "Leaderboard",
         "no_participants": "Wala pang sumasali.",
-        "question_breakdown": "Breakdown ng Tanong"
+        "question_breakdown": "Breakdown ng Tanong",
+        "discover": "Diskubre",
+        "featured_quizzes": "Mga Tampok na Quiz",
+        "play_now": "Laro Na"
       },
       "studentDashboard": {
         "title": "Student Dashboard",
@@ -919,7 +928,10 @@ const resources = {
         "avg_time": "Temps moyen par question (s)",
         "leaderboard": "Classement",
         "no_participants": "Aucun participant.",
-        "question_breakdown": "Détail des questions"
+        "question_breakdown": "Détail des questions",
+        "discover": "Découvrir",
+        "featured_quizzes": "Quiz Vedettes",
+        "play_now": "Jouer"
       },
       "studentDashboard": {
         "title": "Tableau de bord Étudiant",
