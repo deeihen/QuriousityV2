@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import { Play, PlusCircle, QrCode, Timer, BarChart3, CheckCircle2, ChevronRight, Trophy } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { supabase } from '../lib/supabase';
+import type { User } from '@supabase/supabase-js';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
@@ -10,6 +12,13 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [previewStep, setPreviewStep] = useState(0);
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+  }, []);
 
   // Mock quiz data for the live preview
   const previewQuestions = [
@@ -88,11 +97,11 @@ const LandingPage = () => {
               <motion.button 
                 whileHover={{ scale: 1.02, backgroundColor: "rgba(74, 124, 89, 0.05)" }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => navigate('/create')}
+                onClick={() => navigate(user ? '/dashboard' : '/auth')}
                 className="bg-transparent text-primary border-2 border-primary px-6 md:px-8 py-4 rounded-lg font-bold flex items-center justify-center gap-2 transition-all active:scale-95 whitespace-nowrap"
               >
-                {t('landing.create_btn')}
-                <PlusCircle size={18} />
+                {user ? t('navbar.dashboard') : t('landing.create_btn')}
+                {user ? <LayoutGrid size={18} /> : <PlusCircle size={18} />}
               </motion.button>
             </motion.div>
           </motion.div>
@@ -240,17 +249,19 @@ const LandingPage = () => {
             />
           </div>
 
-          <div className="flex justify-center mt-16">
-            <motion.button 
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/auth')}
-              className="bg-primary text-on-primary px-10 py-4 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 flex items-center gap-3 transition-all"
-            >
-              Get Started for Free
-              <ChevronRight size={24} />
-            </motion.button>
-          </div>
+          {!user && (
+            <div className="flex justify-center mt-16">
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/auth')}
+                className="bg-primary text-on-primary px-10 py-4 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 flex items-center gap-3 transition-all"
+              >
+                Get Started for Free
+                <ChevronRight size={24} />
+              </motion.button>
+            </div>
+          )}
         </section>
 
         {/* Features Section */}

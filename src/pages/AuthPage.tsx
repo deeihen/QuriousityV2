@@ -17,6 +17,16 @@ const AuthPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate('/dashboard', { replace: true });
+      }
+    };
+    checkUser();
+  }, [navigate]);
+
   // Get the redirect path from location state, default to /dashboard
   const from = (location.state as any)?.from?.pathname || '/dashboard';
 
